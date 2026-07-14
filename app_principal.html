@@ -29,15 +29,6 @@
 
         .custom-card img { width: 100%; height: 100%; object-fit: contain; opacity: 88%;}
 
-        .marquee-container {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            overflow: hidden;
-            background: rgba(0,0,0,0.8);
-            z-index: 2; /* Mayor que el overlay (1) */
-        }
-        
         .marquee-text {
             display: inline-block;
             padding-left: 100%;
@@ -45,9 +36,20 @@
             font-family: 'Press Start 2P', cursive;
             color: #ff0505;
             font-size: 25px;
+            z-index: 5;
+            position: relative;
         }
 
-        /* Este es el "cristal" del monitor arcade */
+        .marquee-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            overflow: hidden;
+            background: #000; /* Fondo negro sólido para el letrero */
+            z-index: 2;
+            height: 40px; /* Ajusta a la altura de tu texto */
+        }
+        
         .crt-overlay {
             position: absolute;
             top: 0;
@@ -55,10 +57,12 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1; /* El vídeo es 0, el overlay es 1 */
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
+            z-index: 10; /* Debe estar por encima del texto */
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.5) 50%
+            );
+            background-size: 100% 4px; /* Solo líneas horizontales para el LED */
         }
         
         @keyframes marquee {
@@ -79,17 +83,17 @@
             <source src="disco_movil.mp4" media="(max-width: 768px)">
             <source src="disco_escritorio.mp4" media="(min-width: 769px)">
         </video>
-
-        <div class="crt-overlay"></div>
         
         <!-- Aquí irá tu imagen -->
         <div class="custom-card" id="card">
             <img id="custom-img" src="customs/custom1.png" alt="Custom">
-        </div>
-
-        <div class="marquee-container">
-            <div class="marquee-text" id="metadata">
-                <span id="meta-year"></span> | <span id="meta-theme"></span>
+            <div class="marquee-container">
+                <!-- El overlay ahora es hijo del marquee, solo afectará a esta zona -->
+                <div class="crt-overlay"></div>
+                
+                <div class="marquee-text" id="metadata">
+                    <span id="meta-year"></span> | <span id="meta-theme"></span>
+                </div>
             </div>
         </div>
     </div>
