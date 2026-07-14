@@ -8,19 +8,20 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
         .container { position: relative; width: 100vw; height: 100vh; }
         
-        /* Vídeo de fondo principal de la App */
         #app-bg-video { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: cover; z-index: -1; 
+            position: absolute; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            object-fit: cover; 
+            z-index: 1; /* Forzamos que esté por encima de cualquier fondo negro */
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <video autoplay loop playsinline id="app-bg-video">
-            <!-- Si tienes versión de escritorio para este también, puedes añadirla aquí -->
+        <!-- Añadimos 'preload="auto"' para que cargue el vídeo antes de mostrarse -->
+        <video autoplay muted loop playsinline preload="auto" id="app-bg-video">
             <source src="disco_movil.mp4" type="video/mp4">
-            Tu navegador no soporta vídeo.
         </video>
     </div>
 </body>
