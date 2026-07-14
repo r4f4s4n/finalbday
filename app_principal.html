@@ -6,23 +6,26 @@
     <title>App Principal</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        .container { position: relative; width: 100vw; height: 100vh; }
-        
         #app-bg-video { 
-            position: absolute; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            object-fit: cover; 
-            z-index: 1; /* Forzamos que esté por encima de cualquier fondo negro */
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            object-fit: cover; z-index: 1;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Añadimos 'preload="auto"' para que cargue el vídeo antes de mostrarse -->
-        <video autoplay muted loop playsinline preload="auto" id="app-bg-video">
-            <source src="disco_movil.mp4" type="video/mp4">
-        </video>
-    </div>
+    <video id="app-bg-video" playsinline autoplay muted loop poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+        <source src="disco_movil.mp4" type="video/mp4">
+    </video>
+
+    <script>
+        // Forzar reproducción si el navegador la bloquea
+        const video = document.getElementById('app-bg-video');
+        window.onload = () => {
+            video.play().catch(error => {
+                console.log("Autoplay bloqueado, intentando de nuevo...");
+                document.body.addEventListener('click', () => video.play(), { once: true });
+            });
+        };
+    </script>
 </body>
 </html>
