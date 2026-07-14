@@ -11,7 +11,7 @@
         /* Contenedor del cuadrado 1x1 con borde animado */
         .custom-card {
             position: absolute;
-            top: 5%; /* Mitad superior */
+            top: 7%; /* Mitad superior */
             left: 50%;
             transform: translateX(-50%);
             width: 90vw; /* Cuadrado basado en el ancho */
@@ -32,12 +32,13 @@
         .marquee-text {
             display: inline-flex;
             padding-left: 100%;
-            animation: marquee 7s linear infinite;
+            animation: marquee 8s linear infinite;
             font-family: 'Helvetica', cursive;
             color: #ff0505;
             font-size: 25px;
             z-index: 5;
             position: relative;
+            width: 100%;
         }
 
         .marquee-container {
@@ -117,8 +118,8 @@
         document.getElementById('custom-img').src = `customs/custom${currentIndex}.png`;
         
         // Cambiar metadatos
-        document.getElementById('meta-year').innerText = "Año: " + customsData[currentIndex].year;
-        document.getElementById('meta-theme').innerText = "Temática: " + customsData[currentIndex].theme;
+        document.getElementById('meta-year').innerText = customsData[currentIndex].year + " ";
+        document.getElementById('meta-theme').innerText = " " + customsData[currentIndex].theme;
         });
         
         // Llamada inicial para mostrar los datos del primero nada más cargar
