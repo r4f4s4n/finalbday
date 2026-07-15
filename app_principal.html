@@ -815,20 +815,44 @@
         // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
         let currentSwiperIds = order;
 
-        // Reconstruye el contenido del swiper con un nuevo conjunto de ids,
-        // respetando el modo loop de Swiper.
+        // Nº mínimo de slides para que el modo loop de Swiper funcione bien
+        // con slidesPerView:'auto' sin lanzar warnings ni comportarse raro.
+        const MIN_SLIDES_FOR_LOOP = 6;
+
+        // Reconstruye el contenido del swiper con un nuevo conjunto de ids.
+        // Si hay pocos elementos, se desactiva el loop (si no, Swiper avisa
+        // de que no hay slides suficientes y el bucle no funciona bien).
         function rebuildSwiperSlides(ids) {
-            swiper.loopDestroy();
+            if (swiper.params.loop) {
+                swiper.loopDestroy();
+            }
+
             wrapper.innerHTML = '';
             ids.forEach(id => {
                 if (customsData[id]) {
                     wrapper.appendChild(buildSlideNode(id));
                 }
             });
+
+            const shouldLoop = ids.length >= MIN_SLIDES_FOR_LOOP;
+            swiper.params.loop = shouldLoop;
             swiper.update();
-            swiper.loopCreate();
-            swiper.update();
+
+            if (shouldLoop) {
+                swiper.loopCreate();
+                swiper.update();
+            }
+
             currentSwiperIds = ids;
+        }
+
+        // Lleva el swiper a un índice concreto, funcione o no el loop en ese momento.
+        function goToSlideIndex(index, speed = 0) {
+            if (swiper.params.loop) {
+                swiper.slideToLoop(index, speed);
+            } else {
+                swiper.slideTo(index, speed);
+            }
         }
 
         const select = document.getElementById('year-select');
@@ -905,7 +929,7 @@
 
                         const targetSlideIndex = categoryIds.indexOf(targetId);
                         if (targetSlideIndex !== -1) {
-                            swiper.slideToLoop(targetSlideIndex, 0);
+                            goToSlideIndex(targetSlideIndex, 0);
                         }
                     });
                 });
@@ -916,7 +940,7 @@
             diceBtn.classList.add('shake-dice');
             
             const randomSlideIndex = Math.floor(Math.random() * currentSwiperIds.length);
-            swiper.slideToLoop(randomSlideIndex, 600);
+            goToSlideIndex(randomSlideIndex, 600);
 
             setTimeout(() => {
                 diceBtn.classList.remove('shake-dice');
