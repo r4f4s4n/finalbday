@@ -92,7 +92,7 @@
             outline: none;
             cursor: pointer;
             text-shadow: 1px 1px 0px #000;
-            width: 120px;
+            width: 245px;
         }
 
         .arcade-select option {
@@ -855,6 +855,14 @@
             }
         }
 
+        // Devuelve el id (custom) del slide actualmente activo/centrado.
+        function getActiveSlideId() {
+            const activeSlide = swiper.slides[swiper.activeIndex];
+            if (!activeSlide) return null;
+            const idAttr = activeSlide.getAttribute('data-id');
+            return idAttr !== null ? parseInt(idAttr) : null;
+        }
+
         const select = document.getElementById('year-select');
         const selectOptionsMap = {};
         
@@ -884,7 +892,12 @@
                 mainSwiperEl.style.display = 'block';
                 diceBtn.style.display = 'flex';
                 if (currentSwiperIds !== order) {
+                    const activeId = getActiveSlideId();
                     rebuildSwiperSlides(order);
+                    if (activeId !== null) {
+                        const idx = order.indexOf(activeId);
+                        if (idx !== -1) goToSlideIndex(idx, 0);
+                    }
                 }
                 swiper.update();
             } else {
@@ -1018,7 +1031,12 @@
 
             select.value = 'all'; 
             if (currentSwiperIds !== order) {
+                const activeId = getActiveSlideId();
                 rebuildSwiperSlides(order);
+                if (activeId !== null) {
+                    const idx = order.indexOf(activeId);
+                    if (idx !== -1) goToSlideIndex(idx, 0);
+                }
             }
             mainSwiperEl.style.display = 'block';
             mainSwiperEl.style.opacity = '1';
