@@ -636,7 +636,7 @@
     
             // CAMBIO CLAVE: Cambiado onloadedmetadata por oncanplaythrough para asegurar descarga del MP4[cite: 2]
             if (file && file.endsWith('.mp4')) {
-                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline oncanplaythrough="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" src="customs/${file}"></video>`;
+                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline oncanplay="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" src="customs/${file}"></video>`;
             } else {
                 mediaHTML = `<img src="customs/${file}" onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" alt="Custom">`;
             }
