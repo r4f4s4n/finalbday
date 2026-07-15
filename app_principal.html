@@ -6,11 +6,7 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
         .container { position: relative; width: 100vw; height: 100vh; }
-        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
-
-        .destop {
-            margin: auto;
-        }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; max-width: 580px; }
 
         /* Contenedor del cuadrado 1x1 con borde animado */
         .custom-card {
@@ -91,7 +87,7 @@
     <div class="container">
         <video autoplay muted loop playsinline id="app-bg-video">
             <source src="disco_movil.mp4" media="(max-width: 768px)">
-            <source src="disco_movil.mp4" media="(min-width: 769px)" class="destop">
+            <source src="disco_movil.mp4" media="(min-width: 769px)">
         </video>
         
         <!-- Aquí irá tu imagen -->
