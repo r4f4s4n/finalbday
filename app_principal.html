@@ -186,6 +186,7 @@
             20: { year: "2018", theme: "Sin City" }
         };
 
+        // Función para barajar un array
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -194,18 +195,22 @@
             return array;
         }
     
+        // SOLUCCIÓN DEL BUG: Extraemos los IDs reales directamente del objeto para que nunca busque un ID inexistente
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
-
+    
         order.forEach((id) => {
+            // Validación de seguridad: si por algún motivo el ID no existe en tus datos, nos lo saltamos en vez de romper la app
+            if (!customsData[id]) return;
+    
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
             
-            const file = customsData[id].file;
+            const file = customsData[id].file || `custom${id}.png`; // Si olvidas poner 'file', por defecto busca el .png
             let mediaHTML = '';
-
-            // Comprobación de formato
-            if (file.endsWith('.mp4')) {
+    
+            // Comprobación segura de formato (ahora sí funcionará)
+            if (file && file.endsWith('.mp4')) {
                 mediaHTML = `<video class="custom-media" autoplay muted loop playsinline src="customs/${file}"></video>`;
             } else {
                 mediaHTML = `<img src="customs/${file}" alt="Custom">`;
@@ -223,7 +228,7 @@
             `;
             wrapper.appendChild(slide);
         });
-
+    
         // Inicializamos Swiper
         const swiper = new Swiper('.swiper', {
             slidesPerView: 'auto',      
