@@ -905,28 +905,22 @@
 
                     gridItem.addEventListener('click', () => {
                         const targetId = parseInt(id);
-
-                        // 1. Cambiamos la visibilidad
+                    
                         mainGridEl.style.display = 'none';
                         mainSwiperEl.style.display = 'block';
+                        
+                        // CORRECCIÓN: Asegura que el slider sea visible
+                        mainSwiperEl.style.opacity = '1'; 
+                        mainSwiperEl.style.pointerEvents = 'auto';
+                        
                         diceBtn.style.display = 'none';
                         
-                        // 2. Usamos requestAnimationFrame para asegurar que el DOM 
-                        // haya terminado de pintar el "block" antes de inicializar Swiper
-                        requestAnimationFrame(() => {
-                            renderSlider(selectedYear);
-                            
-                            const realIndex = currentSliderIds.indexOf(targetId);
-                            if (realIndex !== -1) {
-                                // Forzamos la actualización del layout del slider
-                                swiper.update();
-                                swiper.slideToLoop(realIndex, 0);
-                            }
-                            
-                            // 3. Una vez renderizado, hacemos el fade-in
-                            mainSwiperEl.style.opacity = '1';
-                            mainSwiperEl.style.pointerEvents = 'auto';
-                        });
+                        renderSlider(selectedYear);
+                    
+                        const realIndex = currentSliderIds.indexOf(targetId);
+                        if (realIndex !== -1) {
+                            swiper.slideToLoop(realIndex, 0);
+                        }
                     });
                 });
             }
