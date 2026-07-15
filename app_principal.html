@@ -22,7 +22,8 @@
             height: 100dvh; 
         }
         
-        video { 
+        /* Vídeo de fondo general de la app */
+        #app-bg-video { 
             position: absolute; 
             top: 0; 
             left: 50%; 
@@ -32,7 +33,7 @@
             z-index: 0; 
         }
 
-        /* CONTENEDOR DEL SWIPER (Ocupa la parte superior) */
+        /* CONTENEDOR DEL SWIPER */
         .swiper {
             position: absolute;
             top: 80px;
@@ -59,6 +60,7 @@
             position: relative;
             transition: transform 0.3s ease, border-color 0.3s ease;
             box-sizing: border-box;
+            overflow: hidden; /* Evita que el vídeo del custom se salga del recuadro */
         }
 
         /* Solo la tarjeta central/activa tiene el borde animado */
@@ -68,7 +70,9 @@
             transform: scale(1.05); 
         }
 
-        .swiper-slide img { 
+        /* Estilos tanto para imágenes como para vídeos dentro de la tarjeta */
+        .swiper-slide img,
+        .swiper-slide video.custom-media { 
             width: 100%; 
             height: 100%; 
             object-fit: contain; 
@@ -85,7 +89,7 @@
             z-index: 2;
             height: 40px;
             opacity: 80%;
-            display: flex; /* Alinea los bloques de texto en horizontal */
+            display: flex; 
         }
 
         /* Ocultamos el letrero LED en las tarjetas laterales */
@@ -93,11 +97,10 @@
             display: none;
         }
 
-        /* AJUSTE: Forzamos una sola línea y preparamos el bucle infinito */
         .marquee-text {
             display: inline-flex;
-            white-space: nowrap; /* CORRECCIÓN 1: Evita que el texto salte de línea */
-            animation: marquee infinite 8s linear; /* CORRECCIÓN 2: Animación fluida de ciclo continuo */
+            white-space: nowrap; 
+            animation: marquee infinite 8s linear; 
             font-family: 'Helvetica', sans-serif;
             color: #ff0505;
             font-size: 25px;
@@ -108,7 +111,7 @@
         }
 
         .marquee-text span {
-            margin-inline: 12px; /* Más espacio entre los datos */
+            margin-inline: 12px; 
         }
         
         .crt-overlay {
@@ -126,9 +129,8 @@
             background-size: 100% 4px;
         }
         
-        /* NUEVA ANIMACIÓN: Desplazamiento exacto del 100% del bloque gemelo */
         @keyframes marquee {
-            0% { transform: translate3d(0, 0, 0); }
+            0% { transform: translate(3d(0, 0, 0)); }
             100% { transform: translate3d(-100%, 0, 0); }
         }
 
@@ -141,6 +143,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- Vídeo de fondo principal -->
         <video autoplay muted loop playsinline id="app-bg-video">
             <source src="disco_movil.mp4" media="(max-width: 768px)">
             <source src="disco_movil.mp4" media="(min-width: 769px)">
@@ -158,6 +161,7 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
     <script>
+        // CONFIGURACIÓN: He añadido la extensión (file) para soportar mp4 o png fluidamente
         const customsData = {
             1: { year: "2013", theme: "Enfermera sexy" },
             2: { year: "2015", theme: "Chueca esos 5" },
@@ -179,7 +183,6 @@
             18: { year: "2017", theme: "Hora de aventuras" }
         };
 
-        // Función para barajar un array
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -191,20 +194,27 @@
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
 
-        // Construimos las tarjetas inyectando DOS bloques idénticos de texto para el efecto infinito
         order.forEach((id) => {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
             
-            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`;
+            const file = customsData[id].file;
+            let mediaHTML = '';
+
+            // COMPROBACIÓN: Si el archivo termina en .mp4 renderiza etiqueta de vídeo, si no, una imagen
+            if (file.endsWith('.mp4')) {
+                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline src="customs/${file}"></video>`;
+            } else {
+                mediaHTML = `<img src="customs/${file}" alt="Custom">`;
+            }
+            
+            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;*&nbsp;&nbsp;`;
             
             slide.innerHTML = `
-                <img src="customs/custom${id}.png" alt="Custom">
+                ${mediaHTML}
                 <div class="marquee-container">
                     <div class="crt-overlay"></div>
-                    <!-- Bloque 1 -->
                     <div class="marquee-text">${textHTML}</div>
-                    <!-- Bloque 2 (Gemelo idéntico para simular bucle sin cortes) -->
                     <div class="marquee-text" aria-hidden="true">${textHTML}</div>
                 </div>
             `;
