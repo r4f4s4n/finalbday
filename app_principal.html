@@ -33,12 +33,46 @@
             z-index: 0; 
         }
 
+        /* PANTALLA DE CARGA RETRO ARCADE */
+        .arcade-loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh;
+            background: #000000; /* Fondo totalmente negro */
+            z-index: 200; /* Por encima de absolutamente todo */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .arcade-loader-text {
+            color: #ff00ff; /* Fucsia neón */
+            font-family: 'Helvetica', sans-serif;
+            font-weight: 900;
+            font-size: 32px;
+            text-shadow: 3px 3px 0px #000, 0 0 10px #ff00ff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            animation: arcade-blink 0.8s steps(2, start) infinite; /* Parpadeo robótico clásico */
+        }
+
+        @keyframes arcade-blink {
+            to { visibility: hidden; }
+        }
+
         /* DESPLEGABLE ARCADE 8-BITS EN LA ESQUINA SUPERIOR IZQUIERDA */
         .arcade-select-container {
             position: absolute;
             top: 15px;
             left: 15px;
-            z-index: 30; /* Por encima de todo */
+            z-index: 30; /* Por encima del swiper y grid */
+            opacity: 0; /* Oculto inicialmente hasta terminar carga */
+            pointer-events: none;
+            transition: opacity 0.3s ease;
         }
 
         .arcade-select {
@@ -77,8 +111,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.3s ease;
             box-sizing: border-box;
+            opacity: 0; /* Oculto inicialmente */
+            pointer-events: none;
         }
 
         .dice-btn:active {
@@ -212,7 +248,7 @@
             100% { border-color: #ffcc00; }
         }
 
-        /* VISTA GRID DE MINIATURAS (Estilo selección de personajes) */
+        /* VISTA GRID DE MINIATURAS */
         .grid-view {
             display: none; 
             position: absolute;
@@ -274,14 +310,14 @@
 
         /* DIALOG DE CONFIRMACIÓN ESTILO STREET FIGHTER 8-BIT */
         .arcade-dialog-overlay {
-            display: none; /* Oculto por defecto */
+            display: none; 
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100dvh;
             background: rgba(0, 0, 0, 0.85);
-            z-index: 100; /* Siempre encima de todo */
+            z-index: 100; 
             justify-content: center;
             align-items: center;
             box-sizing: border-box;
@@ -289,7 +325,6 @@
 
         .arcade-dialog-box {
             background: #111111;
-            /* Borde doble típico de Street fighter */
             border: 6px double #ff00ff; 
             box-shadow: 0 0 25px #ff00ff, inset 0 0 10px #ff00ff;
             padding: 30px 20px;
@@ -314,11 +349,11 @@
             line-height: 1.5;
             margin: 0 0 30px 0;
             text-shadow: 2px 2px 0px #000000;
-            text-transform: uppercase; /* Estilo clásico arcade */
+            text-transform: uppercase; 
         }
 
         .arcade-dialog-text span {
-            color: #ffcc00; /* Resalta el tema en amarillo neón */
+            color: #ffcc00; 
             text-shadow: 2px 2px 0px #000000;
         }
 
@@ -328,7 +363,6 @@
             gap: 20px;
         }
 
-        /* Botones estilo selector arcade */
         .arcade-btn {
             flex: 1;
             padding: 12px 20px;
@@ -349,21 +383,26 @@
         }
 
         .btn-no {
-            background: #ff0505; /* Rojo clásico Fighter */
+            background: #ff0505; 
             color: #ffffff;
             text-shadow: 1px 1px 0px #000;
         }
 
         .btn-yes {
-            background: #00ff00; /* Verde victoria */
+            background: #00ff00; 
             color: #000000;
         }
     </style>
 </head>
 <body>
+    <!-- Pantalla de Carga 8-Bits -->
+    <div class="arcade-loader-overlay" id="arcade-loader">
+        <div class="arcade-loader-text">CARGANDO...</div>
+    </div>
+
     <div class="container">
         <!-- Desplegable Retro Arcade -->
-        <div class="arcade-select-container">
+        <div class="arcade-select-container" id="select-container">
             <select class="arcade-select" id="year-select">
                 <option value="all">TODOS LOS AÑOS</option>
             </select>
@@ -530,6 +569,31 @@
         // Obtenemos el orden aleatorio general para el slider
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
+
+        // Lógica de precarga de recursos
+        let totalMediaToLoad = 0;
+        let mediaLoadedCount = 0;
+
+        function checkAllMediaLoaded() {
+            mediaLoadedCount++;
+            if (mediaLoadedCount >= totalMediaToLoad) {
+                // Desvanecer la pantalla de carga
+                const loader = document.getElementById('arcade-loader');
+                loader.style.opacity = '0';
+                loader.style.visibility = 'hidden';
+
+                // Habilitar y mostrar los botones superiores de control
+                const selectContainer = document.getElementById('select-container');
+                const diceBtn = document.getElementById('random-dice');
+                selectContainer.style.opacity = '1';
+                selectContainer.style.pointerEvents = 'auto';
+                diceBtn.style.opacity = '1';
+                diceBtn.style.pointerEvents = 'auto';
+
+                // Actualizar Swiper ahora que los tamaños de recursos se han asentado
+                swiper.update();
+            }
+        }
     
         // Inyectamos las tarjetas en el Slider
         order.forEach((id) => {
@@ -541,11 +605,14 @@
             
             const file = customsData[id].file || `custom${id}.png`;
             let mediaHTML = '';
+            totalMediaToLoad++; // Sumamos al contador de recursos
     
             if (file && file.endsWith('.mp4')) {
-                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline src="customs/${file}"></video>`;
+                // Se ejecuta al cargar los metadatos iniciales del video
+                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline onloadedmetadata="checkAllMediaLoaded()" src="customs/${file}"></video>`;
             } else {
-                mediaHTML = `<img src="customs/${file}" alt="Custom">`;
+                // Se ejecuta al descargar la imagen por completo
+                mediaHTML = `<img src="customs/${file}" onload="checkAllMediaLoaded()" alt="Custom">`;
             }
             
             const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;*&nbsp;&nbsp;`;
@@ -663,7 +730,7 @@
             }, 500);
         });
 
-        // LÓGICA DE SELECCIÓN Y DIALOG ARCADE (NUEVO)
+        // LÓGICA DE SELECCIÓN Y DIALOG ARCADE
         const confirmDialog = document.getElementById('confirm-dialog');
         const dialogThemeText = document.getElementById('dialog-theme');
         const btnNo = document.getElementById('btn-no');
@@ -671,11 +738,11 @@
 
         // Escuchamos el clic directamente en las tarjetas del Swiper
         swiper.on('click', (s, event) => {
-            // Comprobamos si se ha clicado en el elemento activo o dentro de él
+            // Comprobamos si se ha clicado en el elemento activo o dentro de él[cite: 1]
             const clickedActiveSlide = event.target.closest('.swiper-slide-active');
             
             if (clickedActiveSlide) {
-                // Obtenemos el ID asignado a esa tarjeta
+                // Obtenemos el ID asignado a esa tarjeta[cite: 1]
                 const customId = clickedActiveSlide.getAttribute('data-id');
                 const selectedCustom = customsData[customId];
 
@@ -688,15 +755,14 @@
             }
         });
 
-        // Acción al pulsar "No" (Cerrar el dialog y volver al estado anterior)
+        // Acción al pulsar "No" (Cerrar el dialog y volver al estado anterior)[cite: 1]
         btnNo.addEventListener('click', () => {
             confirmDialog.style.display = 'none';
         });
 
-        // Acción al pulsar "Sí" (Estructura preparada para continuar más tarde)
+        // Acción al pulsar "Sí"
         btnYes.addEventListener('click', () => {
             console.log("Disfraz elegido!");
-            // Abordaremos este flujo en el siguiente paso
         });
     </script>
 </body>
