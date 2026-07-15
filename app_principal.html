@@ -133,6 +133,7 @@
             transition: transform 0.3s ease, border-color 0.3s ease;
             box-sizing: border-box;
             overflow: hidden; 
+            cursor: pointer;
         }
 
         /* Solo la tarjeta central/activa tiene el borde animado */
@@ -213,7 +214,7 @@
 
         /* VISTA GRID DE MINIATURAS (Estilo selección de personajes) */
         .grid-view {
-            display: none; /* Oculto por defecto */
+            display: none; 
             position: absolute;
             top: 80px;
             left: 5%;
@@ -229,7 +230,6 @@
             box-shadow: 0px 0px 15px #ff00ff;
         }
 
-        /* Ocultar barra de scroll en navegadores modernos */
         .grid-view::-webkit-scrollbar {
             width: 6px;
         }
@@ -269,7 +269,94 @@
         .grid-item video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Para que en las miniaturas cuadren perfectos */
+            object-fit: cover; 
+        }
+
+        /* DIALOG DE CONFIRMACIÓN ESTILO STREET FIGHTER 8-BIT */
+        .arcade-dialog-overlay {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100; /* Siempre encima de todo */
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+        }
+
+        .arcade-dialog-box {
+            background: #111111;
+            /* Borde doble típico de Street fighter */
+            border: 6px double #ff00ff; 
+            box-shadow: 0 0 25px #ff00ff, inset 0 0 10px #ff00ff;
+            padding: 30px 20px;
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+            box-sizing: border-box;
+            border-radius: 4px;
+            animation: dialog-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes dialog-pop {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .arcade-dialog-text {
+            color: #ffffff;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.5;
+            margin: 0 0 30px 0;
+            text-shadow: 2px 2px 0px #000000;
+            text-transform: uppercase; /* Estilo clásico arcade */
+        }
+
+        .arcade-dialog-text span {
+            color: #ffcc00; /* Resalta el tema en amarillo neón */
+            text-shadow: 2px 2px 0px #000000;
+        }
+
+        .arcade-dialog-buttons {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        /* Botones estilo selector arcade */
+        .arcade-btn {
+            flex: 1;
+            padding: 12px 20px;
+            font-family: 'Helvetica', sans-serif;
+            font-weight: bold;
+            font-size: 18px;
+            border: 4px solid #000000;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #000000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-transform: uppercase;
+        }
+
+        .arcade-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px #000000;
+        }
+
+        .btn-no {
+            background: #ff0505; /* Rojo clásico Fighter */
+            color: #ffffff;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        .btn-yes {
+            background: #00ff00; /* Verde victoria */
+            color: #000000;
         }
     </style>
 </head>
@@ -279,7 +366,6 @@
         <div class="arcade-select-container">
             <select class="arcade-select" id="year-select">
                 <option value="all">TODOS LOS AÑOS</option>
-                <!-- Las categorías dinámicas se añadirán por JS -->
             </select>
         </div>
 
@@ -311,6 +397,19 @@
         <div class="grid-view" id="main-grid">
             <div class="grid-container" id="grid-wrapper">
                 <!-- Se inyectan las miniaturas aquí -->
+            </div>
+        </div>
+
+        <!-- POPUP DIALOG DE CONFIRMACIÓN -->
+        <div class="arcade-dialog-overlay" id="confirm-dialog">
+            <div class="arcade-dialog-box">
+                <p class="arcade-dialog-text">
+                    ¿Quieres ir disfrazado de <span id="dialog-theme"></span> en Cumple: El Final el día 6 de diciembre?
+                </p>
+                <div class="arcade-dialog-buttons">
+                    <button class="arcade-btn btn-no" id="btn-no">No</button>
+                    <button class="arcade-btn btn-yes" id="btn-yes">Sí</button>
+                </div>
             </div>
         </div>
     </div>
@@ -438,7 +537,6 @@
     
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
-            // Asignamos el ID del custom como atributo de datos para localizarlo rápido después
             slide.setAttribute('data-id', id);
             
             const file = customsData[id].file || `custom${id}.png`;
@@ -475,7 +573,6 @@
         // GENERACIÓN DINÁMICA DE OPCIONES EN EL SELECT
         const select = document.getElementById('year-select');
         
-        // Agrupamos categorías por año (con estructura id: { year, category })
         const selectOptionsMap = {};
         Object.values(customsData).forEach(item => {
             if (!selectOptionsMap[item.year]) {
@@ -483,7 +580,6 @@
             }
         });
 
-        // Ordenamos los años e insertamos las opciones en el select
         Object.keys(selectOptionsMap).sort().forEach(year => {
             const option = document.createElement('option');
             option.value = year;
@@ -501,23 +597,19 @@
             const selectedYear = e.target.value;
 
             if (selectedYear === 'all') {
-                // Volvemos a mostrar el Slider
                 mainGridEl.style.display = 'none';
                 mainSwiperEl.style.display = 'block';
                 diceBtn.style.display = 'flex';
                 swiper.update();
             } else {
-                // Ocultamos el Slider y el Dado, mostramos las miniaturas
                 mainSwiperEl.style.display = 'none';
                 diceBtn.style.display = 'none';
                 mainGridEl.style.display = 'block';
 
-                // Filtramos los customs pertenecientes al año seleccionado
                 const filteredCustoms = Object.entries(customsData).filter(([id, data]) => {
                     return data.year === selectedYear;
                 });
 
-                // Limpiamos y repoblamos la cuadrícula de miniaturas
                 gridWrapper.innerHTML = '';
                 filteredCustoms.forEach(([id, data]) => {
                     const gridItem = document.createElement('div');
@@ -540,22 +632,19 @@
                     gridItem.addEventListener('click', () => {
                         const targetId = parseInt(id);
 
-                        // Volvemos al select general y mostramos el slider
                         select.value = 'all';
                         mainGridEl.style.display = 'none';
                         mainSwiperEl.style.display = 'block';
                         diceBtn.style.display = 'flex';
                         
-                        // Actualizamos Swiper para que registre los cambios de pantalla
                         swiper.update();
 
-                        // Buscamos el índice del slide que contiene este custom ID
                         const targetSlideIndex = swiper.slides.findIndex(slide => {
                             return parseInt(slide.getAttribute('data-id')) === targetId;
                         });
 
                         if (targetSlideIndex !== -1) {
-                            swiper.slideTo(targetSlideIndex, 0); // Salto inmediato al slide seleccionado
+                            swiper.slideTo(targetSlideIndex, 0); 
                         }
                     });
                 });
@@ -572,6 +661,42 @@
             setTimeout(() => {
                 diceBtn.classList.remove('shake-dice');
             }, 500);
+        });
+
+        // LÓGICA DE SELECCIÓN Y DIALOG ARCADE (NUEVO)
+        const confirmDialog = document.getElementById('confirm-dialog');
+        const dialogThemeText = document.getElementById('dialog-theme');
+        const btnNo = document.getElementById('btn-no');
+        const btnYes = document.getElementById('btn-yes');
+
+        // Escuchamos el clic directamente en las tarjetas del Swiper
+        swiper.on('click', (s, event) => {
+            // Comprobamos si se ha clicado en el elemento activo o dentro de él
+            const clickedActiveSlide = event.target.closest('.swiper-slide-active');
+            
+            if (clickedActiveSlide) {
+                // Obtenemos el ID asignado a esa tarjeta
+                const customId = clickedActiveSlide.getAttribute('data-id');
+                const selectedCustom = customsData[customId];
+
+                if (selectedCustom) {
+                    // Actualizamos el texto del dialog con el tema actual
+                    dialogThemeText.textContent = selectedCustom.theme;
+                    // Mostramos el dialog en flex para centrarlo
+                    confirmDialog.style.display = 'flex';
+                }
+            }
+        });
+
+        // Acción al pulsar "No" (Cerrar el dialog y volver al estado anterior)
+        btnNo.addEventListener('click', () => {
+            confirmDialog.style.display = 'none';
+        });
+
+        // Acción al pulsar "Sí" (Estructura preparada para continuar más tarde)
+        btnYes.addEventListener('click', () => {
+            console.log("Disfraz elegido!");
+            // Abordaremos este flujo en el siguiente paso
         });
     </script>
 </body>
