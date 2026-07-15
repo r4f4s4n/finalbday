@@ -762,25 +762,32 @@
             }
         }, 4000); 
     
-        order.forEach((id) => {
-            if (!customsData[id]) return;
-    
+        // Construye el nodo DOM de una slide a partir de su id.
+        // trackLoad=true sólo se usa en la carga inicial, para saber cuándo ocultar el loader.
+        function buildSlideNode(id, { trackLoad = false } = {}) {
+            const data = customsData[id];
+
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
             slide.setAttribute('data-id', id);
-            
-            const file = customsData[id].file || `custom${id}.png`;
-            let mediaHTML = '';
-            totalMediaToLoad++;
-    
-            if (file && file.endsWith('.mp4')) {
-                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline oncanplaythrough="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" src="customs/${file}"></video>`;
-            } else {
-                mediaHTML = `<img src="customs/${file}" onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" alt="Custom">`;
-            }
-            
-            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`;
-            
+
+            const file = data.file || `custom${id}.png`;
+            const isVideo = file && file.endsWith('.mp4');
+
+            if (trackLoad) totalMediaToLoad++;
+
+            const loadAttrs = trackLoad
+                ? (isVideo
+                    ? `oncanplaythrough="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()"`
+                    : `onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()"`)
+                : '';
+
+            const mediaHTML = isVideo
+                ? `<video class="custom-media" autoplay muted loop playsinline ${loadAttrs} src="customs/${file}"></video>`
+                : `<img src="customs/${file}" ${loadAttrs} alt="Custom">`;
+
+            const textHTML = `<span>${data.year}</span> | <span>${data.theme}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`;
+
             slide.innerHTML = `
                 ${mediaHTML}
                 <div class="marquee-container">
@@ -789,7 +796,12 @@
                     <div class="marquee-text" aria-hidden="true">${textHTML}</div>
                 </div>
             `;
-            wrapper.appendChild(slide);
+            return slide;
+        }
+
+        order.forEach((id) => {
+            if (!customsData[id]) return;
+            wrapper.appendChild(buildSlideNode(id, { trackLoad: true }));
         });
     
         const swiper = new Swiper('.swiper', {
@@ -799,6 +811,25 @@
             loop: true,                 
             grabCursor: true,           
         });
+
+        // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
+        let currentSwiperIds = order;
+
+        // Reconstruye el contenido del swiper con un nuevo conjunto de ids,
+        // respetando el modo loop de Swiper.
+        function rebuildSwiperSlides(ids) {
+            swiper.loopDestroy();
+            wrapper.innerHTML = '';
+            ids.forEach(id => {
+                if (customsData[id]) {
+                    wrapper.appendChild(buildSlideNode(id));
+                }
+            });
+            swiper.update();
+            swiper.loopCreate();
+            swiper.update();
+            currentSwiperIds = ids;
+        }
 
         const select = document.getElementById('year-select');
         const selectOptionsMap = {};
@@ -828,6 +859,9 @@
                 mainGridEl.style.display = 'none';
                 mainSwiperEl.style.display = 'block';
                 diceBtn.style.display = 'flex';
+                if (currentSwiperIds !== order) {
+                    rebuildSwiperSlides(order);
+                }
                 swiper.update();
             } else {
                 mainSwiperEl.style.display = 'none';
@@ -858,20 +892,20 @@
 
                     gridItem.addEventListener('click', () => {
                         const targetId = parseInt(id);
+                        // Ids de la categoría/año actualmente seleccionada en el grid
+                        const categoryIds = filteredCustoms.map(([entryId]) => parseInt(entryId));
 
-                        select.value = 'all';
+                        // El select mantiene el valor de la categoría seleccionada
+                        // (ya está en selectedYear), por lo que mostrará su texto.
                         mainGridEl.style.display = 'none';
                         mainSwiperEl.style.display = 'block';
                         diceBtn.style.display = 'flex';
-                        
-                        swiper.update();
 
-                        const targetSlideIndex = swiper.slides.findIndex(slide => {
-                            return parseInt(slide.getAttribute('data-id')) === targetId;
-                        });
+                        rebuildSwiperSlides(categoryIds);
 
+                        const targetSlideIndex = categoryIds.indexOf(targetId);
                         if (targetSlideIndex !== -1) {
-                            swiper.slideTo(targetSlideIndex, 0);
+                            swiper.slideToLoop(targetSlideIndex, 0);
                         }
                     });
                 });
@@ -881,7 +915,7 @@
         diceBtn.addEventListener('click', () => {
             diceBtn.classList.add('shake-dice');
             
-            const randomSlideIndex = Math.floor(Math.random() * order.length);
+            const randomSlideIndex = Math.floor(Math.random() * currentSwiperIds.length);
             swiper.slideToLoop(randomSlideIndex, 600);
 
             setTimeout(() => {
@@ -959,6 +993,9 @@
             bgVideo.play().catch(() => {});
 
             select.value = 'all'; 
+            if (currentSwiperIds !== order) {
+                rebuildSwiperSlides(order);
+            }
             mainSwiperEl.style.display = 'block';
             mainSwiperEl.style.opacity = '1';
             mainSwiperEl.style.pointerEvents = 'auto';
