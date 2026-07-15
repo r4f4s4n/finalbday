@@ -22,7 +22,7 @@
             height: 100dvh; 
         }
         
-        /* Vídeo de fondo general de la app[cite: 1] */
+        /* Vídeo de fondo general de la app[cite: 2] */
         #app-bg-video { 
             position: absolute; 
             top: 0; 
@@ -33,28 +33,28 @@
             z-index: 0; 
         }
 
-        /* PANTALLA DE CARGA RETRO TRANSLÚCIDA (Mejorado) */
+        /* PANTALLA DE CARGA RETRO TRANSLÚCIDA[cite: 2] */
         .arcade-loader-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100dvh;
-            /* Fondo semitransparente para ver el video correr por detrás */
+            /* Fondo semitransparente para ver el video de fondo correr por detrás[cite: 2] */
             background: rgba(0, 0, 0, 0.75); 
-            backdrop-filter: blur(3px); /* Suave desenfoque estilo cristal */
+            backdrop-filter: blur(3px); /* Suave desenfoque estilo cristal[cite: 2] */
             -webkit-backdrop-filter: blur(3px);
-            z-index: 200; /* Siempre por encima de todo */
+            z-index: 200; /* Siempre por encima de todo[cite: 2] */
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
             transition: opacity 0.5s ease, visibility 0.5s ease;
-            pointer-events: all; /* Bloquea por completo clics de fondo */
+            pointer-events: all; /* Bloquea por completo clics de fondo[cite: 2] */
         }
 
         .arcade-loader-text {
-            color: #ff00ff; /* Fucsia neón */
+            color: #ff00ff; /* Fucsia neón[cite: 2] */
             font-family: 'Helvetica', sans-serif;
             font-weight: 900;
             font-size: 32px;
@@ -68,15 +68,15 @@
             to { visibility: hidden; }
         }
 
-        /* DESPLEGABLE ARCADE 8-BITS EN LA ESQUINA SUPERIOR IZQUIERDA */
+        /* DESPLEGABLE ARCADE 8-BITS EN LA ESQUINA SUPERIOR IZQUIERDA[cite: 2] */
         .arcade-select-container {
             position: absolute;
             top: 15px;
             left: 15px;
             z-index: 30; 
-            opacity: 0; /* Oculto inicialmente */
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+            opacity: 0; /* Oculto inicialmente[cite: 2] */
+            pointer-events: none; /* Deshabilitado inicialmente[cite: 2] */
+            transition: opacity 0.5s ease; /* Transición suave de entrada */
         }
 
         .arcade-select {
@@ -100,7 +100,7 @@
             color: #ff00ff;
         }
 
-        /* DADO ARCADE BLANCO EN LA ESQUINA SUPERIOR DERECHA */
+        /* DADO ARCADE BLANCO EN LA ESQUINA SUPERIOR DERECHA[cite: 2] */
         .dice-btn {
             position: absolute;
             top: 15px;
@@ -116,10 +116,10 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.3s ease;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.5s ease; /* Transición suave de entrada */
             box-sizing: border-box;
-            opacity: 0; /* Oculto inicialmente */
-            pointer-events: none;
+            opacity: 0; /* Oculto inicialmente[cite: 2] */
+            pointer-events: none; /* Deshabilitado inicialmente[cite: 2] */
         }
 
         .dice-btn:active {
@@ -132,7 +132,7 @@
             height: 24px;
         }
 
-        /* Animación de agitación */
+        /* Animación de agitación[cite: 2] */
         .shake-dice {
             animation: dice-shake 0.5s ease-in-out;
         }
@@ -146,7 +146,7 @@
             100% { transform: rotate(0deg) scale(1); }
         }
 
-        /* CONTENEDOR DEL SWIPER */
+        /* CONTENEDOR DEL SWIPER[cite: 2] */
         .swiper {
             position: absolute;
             top: 80px;
@@ -155,9 +155,12 @@
             height: auto;
             padding: 10px 0; 
             z-index: 2;
+            opacity: 0; /* Oculto inicialmente durante el Cargando */
+            pointer-events: none; /* Deshabilitado inicialmente */
+            transition: opacity 0.5s ease; /* Transición suave de entrada */
         }
 
-        /* Cada tarjeta del carrusel */
+        /* Cada tarjeta del carrusel[cite: 2] */
         .swiper-slide {
             width: 40vw;
             height: 40vw;
@@ -177,7 +180,7 @@
             cursor: pointer;
         }
 
-        /* Solo la tarjeta central/activa tiene el borde animado */
+        /* Solo la tarjeta central/activa tiene el borde animado[cite: 2] */
         .swiper-slide-active {
             border: 4px solid #ffcc00;
             animation: border-dance 2s infinite linear;
@@ -192,7 +195,7 @@
             opacity: 88%;
         }
 
-        /* CONTENEDORES LED COMPLETO */
+        /* CONTENEDORES LED COMPLETO[cite: 2] */
         .marquee-container {
             position: absolute;
             bottom: 0;
@@ -205,7 +208,7 @@
             display: flex; 
         }
 
-        /* Ocultamos el letrero LED en las tarjetas laterales */
+        /* Ocultamos el letrero LED en las tarjetas laterales[cite: 2] */
         .swiper-slide:not(.swiper-slide-active) .marquee-container {
             display: none;
         }
@@ -253,7 +256,7 @@
             100% { border-color: #ffcc00; }
         }
 
-        /* VISTA GRID DE MINIATURAS */
+        /* VISTA GRID DE MINIATURAS[cite: 2] */
         .grid-view {
             display: none; 
             position: absolute;
@@ -313,7 +316,7 @@
             object-fit: cover; 
         }
 
-        /* DIALOG DE CONFIRMACIÓN ESTILO STREET FIGHTER 8-BIT */
+        /* DIALOG DE CONFIRMACIÓN ESTILO STREET FIGHTER 8-BIT[cite: 2] */
         .arcade-dialog-overlay {
             display: none; 
             position: absolute;
@@ -400,20 +403,20 @@
     </style>
 </head>
 <body>
-    <!-- Pantalla de Carga 8-Bits Semitransparente -->
+    <!-- Pantalla de Carga 8-Bits Semitransparente[cite: 2] -->
     <div class="arcade-loader-overlay" id="arcade-loader">
         <div class="arcade-loader-text">CARGANDO...</div>
     </div>
 
     <div class="container">
-        <!-- Desplegable Retro Arcade -->
+        <!-- Desplegable Retro Arcade[cite: 2] -->
         <div class="arcade-select-container" id="select-container">
             <select class="arcade-select" id="year-select">
                 <option value="all">POR AÑO</option>
             </select>
         </div>
 
-        <!-- Botón de Dado Blanco Arcade -->
+        <!-- Botón de Dado Blanco Arcade[cite: 2] -->
         <div class="dice-btn" id="random-dice" title="¡Suerte de la noche!">
             <svg viewBox="0 0 24 24">
                 <rect x="10" y="10" width="4" height="4" fill="#000000" />
@@ -424,35 +427,35 @@
             </svg>
         </div>
 
-        <!-- Vídeo de fondo principal[cite: 1] -->
+        <!-- Vídeo de fondo principal[cite: 2] -->
         <video autoplay muted loop playsinline id="app-bg-video">
             <source src="disco_movil.mp4" media="(max-width: 768px)">
             <source src="disco_movil.mp4" media="(min-width: 769px)">
         </video>
         
-        <!-- VISTA SLIDER (TINDER) -->
+        <!-- VISTA SLIDER (TINDER)[cite: 2] -->
         <div class="swiper" id="main-swiper">
             <div class="swiper-wrapper" id="slides-wrapper">
-                <!-- Se inyecta dinámicamente -->
+                <!-- Se inyecta dinámicamente[cite: 2] -->
             </div>
         </div>
 
-        <!-- VISTA GRID (MINIATURAS SELECCIÓN ARCADE) -->
+        <!-- VISTA GRID (MINIATURAS SELECCIÓN ARCADE)[cite: 2] -->
         <div class="grid-view" id="main-grid">
             <div class="grid-container" id="grid-wrapper">
-                <!-- Se inyectan las miniaturas aquí -->
+                <!-- Se inyectan las miniaturas aquí[cite: 2] -->
             </div>
         </div>
 
-        <!-- POPUP DIALOG DE CONFIRMACIÓN -->
+        <!-- POPUP DIALOG DE CONFIRMACIÓN[cite: 2] -->
         <div class="arcade-dialog-overlay" id="confirm-dialog">
             <div class="arcade-dialog-box">
                 <p class="arcade-dialog-text">
-                    ¿Quieres ir disfrazado de <span id="dialog-theme"></span> en <span>Cumple: El Final</span> el día 6 de diciembre?
+                    ¿Quieres ir disfrazado de <span id="dialog-theme"></span> en <span>Cumple: El Final</span> el día 6 de diciembre?[cite: 2]
                 </p>
                 <div class="arcade-dialog-buttons">
-                    <button class="arcade-btn btn-no" id="btn-no">No</button>
-                    <button class="arcade-btn btn-yes" id="btn-yes">Sí</button>
+                    <button class="arcade-btn btn-no" id="btn-no">No</button>[cite: 2]
+                    <button class="arcade-btn btn-yes" id="btn-yes">Sí</button>[cite: 2]
                 </div>
             </div>
         </div>
@@ -570,75 +573,80 @@
             return array;
         }
     
-        // Obtenemos el orden aleatorio general para el slider
+        // Obtenemos el orden aleatorio general para el slider[cite: 2]
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
 
-        // Lógica de precarga de recursos robusta
+        // Lógica de precarga de recursos robusta[cite: 2]
         let totalMediaToLoad = 0;
         let mediaLoadedCount = 0;
-        let isAppReady = false; // Flag para evitar llamadas dobles
+        let isAppReady = false; // Flag para evitar llamadas dobles[cite: 2]
 
-        // Función centralizada de inicio de App
+        // Función centralizada de inicio de App[cite: 2]
         function forceStartApp() {
-            if (isAppReady) return;
-            isAppReady = true;
+            if (isAppReady) return;[cite: 2]
+            isAppReady = true;[cite: 2]
 
-            console.log("Iniciando aplicación. Recursos listos.");
+            console.log("Iniciando aplicación. Recursos listos.");[cite: 2]
 
-            // Ocultar la pantalla de carga con desvanecimiento
-            const loader = document.getElementById('arcade-loader');
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
+            // Ocultar la pantalla de carga con desvanecimiento[cite: 2]
+            const loader = document.getElementById('arcade-loader');[cite: 2]
+            loader.style.opacity = '0';[cite: 2]
+            loader.style.visibility = 'hidden';[cite: 2]
 
-            // Desbloquear controles superiores
-            const selectContainer = document.getElementById('select-container');
-            const diceBtn = document.getElementById('random-dice');
-            selectContainer.style.opacity = '1';
-            selectContainer.style.pointerEvents = 'auto';
-            diceBtn.style.opacity = '1';
-            diceBtn.style.pointerEvents = 'auto';
+            // Mostrar el slider con suavidad ahora que todo ha cargado
+            const mainSwiper = document.getElementById('main-swiper');
+            mainSwiper.style.opacity = '1';
+            mainSwiper.style.pointerEvents = 'auto';
 
-            // Actualizar Swiper para el render definitivo
-            swiper.update();
+            // Desbloquear y mostrar controles superiores[cite: 2]
+            const selectContainer = document.getElementById('select-container');[cite: 2]
+            const diceBtn = document.getElementById('random-dice');[cite: 2]
+            selectContainer.style.opacity = '1';[cite: 2]
+            selectContainer.style.pointerEvents = 'auto';[cite: 2]
+            diceBtn.style.opacity = '1';[cite: 2]
+            diceBtn.style.pointerEvents = 'auto';[cite: 2]
+
+            // Actualizar Swiper para el render definitivo[cite: 2]
+            swiper.update();[cite: 2]
         }
 
         function checkAllMediaLoaded() {
-            if (isAppReady) return;
-            mediaLoadedCount++;
-            if (mediaLoadedCount >= totalMediaToLoad) {
-                forceStartApp();
+            if (isAppReady) return;[cite: 2]
+            mediaLoadedCount++;[cite: 2]
+            if (mediaLoadedCount >= totalMediaToLoad) {[cite: 2]
+                forceStartApp();[cite: 2]
             }
         }
 
-        // FUSIBLE DE SEGURIDAD RETRO: Si pasan 4 segundos, forzamos inicio pase lo que pase
+        // FUSIBLE DE SEGURIDAD RETRO: Si pasan 4 segundos, forzamos inicio pase lo que pase[cite: 2]
         setTimeout(() => {
-            if (!isAppReady) {
-                console.warn("Fusible de carga activado (Timeout). Iniciando aplicación de forma forzada.");
-                forceStartApp();
+            if (!isAppReady) {[cite: 2]
+                console.warn("Fusible de carga activado (Timeout). Iniciando aplicación de forma forzada.");[cite: 2]
+                forceStartApp();[cite: 2]
             }
-        }, 4000); 
+        }, 4000);[cite: 2]
     
-        // Inyectamos las tarjetas en el Slider
+        // Inyectamos las tarjetas en el Slider[cite: 2]
         order.forEach((id) => {
-            if (!customsData[id]) return;
+            if (!customsData[id]) return;[cite: 2]
     
-            const slide = document.createElement('div');
-            slide.className = 'swiper-slide';
-            slide.setAttribute('data-id', id);
+            const slide = document.createElement('div');[cite: 2]
+            slide.className = 'swiper-slide';[cite: 2]
+            slide.setAttribute('data-id', id);[cite: 2]
             
-            const file = customsData[id].file || `custom${id}.png`;
-            let mediaHTML = '';
-            totalMediaToLoad++; // Sumamos al contador
+            const file = customsData[id].file || `custom${id}.png`;[cite: 2]
+            let mediaHTML = '';[cite: 2]
+            totalMediaToLoad++; // Sumamos al contador[cite: 2]
     
-            // Añadimos tanto onload/onloadedmetadata como onerror en todas las etiquetas
-            if (file && file.endsWith('.mp4')) {
-                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline onloadedmetadata="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" src="customs/${file}"></video>`;
+            // Añadimos tanto onload/onloadedmetadata como onerror en todas las etiquetas[cite: 2]
+            if (file && file.endsWith('.mp4')) {[cite: 2]
+                mediaHTML = `<video class="custom-media" autoplay muted loop playsinline onloadedmetadata="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" src="customs/${file}"></video>`;[cite: 2]
             } else {
-                mediaHTML = `<img src="customs/${file}" onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" alt="Custom">`;
+                mediaHTML = `<img src="customs/${file}" onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()" alt="Custom">`;[cite: 2]
             }
             
-            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;*&nbsp;&nbsp;`;
+            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;*&nbsp;&nbsp;`;[cite: 2]
             
             slide.innerHTML = `
                 ${mediaHTML}
@@ -648,10 +656,10 @@
                     <div class="marquee-text" aria-hidden="true">${textHTML}</div>
                 </div>
             `;
-            wrapper.appendChild(slide);
+            wrapper.appendChild(slide);[cite: 2]
         });
     
-        // Inicializamos Swiper
+        // Inicializamos Swiper[cite: 2]
         const swiper = new Swiper('.swiper', {
             slidesPerView: 'auto',      
             centeredSlides: true,       
@@ -660,132 +668,132 @@
             grabCursor: true,           
         });
 
-        // GENERACIÓN DINÁMICA DE OPCIONES EN EL SELECT
-        const select = document.getElementById('year-select');
+        // GENERACIÓN DINÁMICA DE OPCIONES EN EL SELECT[cite: 2]
+        const select = document.getElementById('year-select');[cite: 2]
         
-        const selectOptionsMap = {};
-        Object.values(customsData).forEach(item => {
-            if (!selectOptionsMap[item.year]) {
-                selectOptionsMap[item.year] = item.category;
+        const selectOptionsMap = {};[cite: 2]
+        Object.values(customsData).forEach(item => {[cite: 2]
+            if (!selectOptionsMap[item.year]) {[cite: 2]
+                selectOptionsMap[item.year] = item.category;[cite: 2]
             }
         });
 
-        Object.keys(selectOptionsMap).sort().forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = `${year} - ${selectOptionsMap[year].toUpperCase()}`;
-            select.appendChild(option);
+        Object.keys(selectOptionsMap).sort().forEach(year => {[cite: 2]
+            const option = document.createElement('option');[cite: 2]
+            option.value = year;[cite: 2]
+            option.textContent = `${year} - ${selectOptionsMap[year].toUpperCase()}`;[cite: 2]
+            select.appendChild(option);[cite: 2]
         });
 
-        // LOGICA DE CAMBIO DE VISTA (DESPLEGABLE)
-        const mainSwiperEl = document.getElementById('main-swiper');
-        const mainGridEl = document.getElementById('main-grid');
-        const gridWrapper = document.getElementById('grid-wrapper');
-        const diceBtn = document.getElementById('random-dice');
+        // LOGICA DE CAMBIO DE VISTA (DESPLEGABLE)[cite: 2]
+        const mainSwiperEl = document.getElementById('main-swiper');[cite: 2]
+        const mainGridEl = document.getElementById('main-grid');[cite: 2]
+        const gridWrapper = document.getElementById('grid-wrapper');[cite: 2]
+        const diceBtn = document.getElementById('random-dice');[cite: 2]
 
         select.addEventListener('change', (e) => {
             const selectedYear = e.target.value;
 
             if (selectedYear === 'all') {
-                mainGridEl.style.display = 'none';
-                mainSwiperEl.style.display = 'block';
-                diceBtn.style.display = 'flex';
-                swiper.update();
+                mainGridEl.style.display = 'none';[cite: 2]
+                mainSwiperEl.style.display = 'block';[cite: 2]
+                diceBtn.style.display = 'flex';[cite: 2]
+                swiper.update();[cite: 2]
             } else {
-                mainSwiperEl.style.display = 'none';
-                diceBtn.style.display = 'none';
-                mainGridEl.style.display = 'block';
+                mainSwiperEl.style.display = 'none';[cite: 2]
+                diceBtn.style.display = 'none';[cite: 2]
+                mainGridEl.style.display = 'block';[cite: 2]
 
-                const filteredCustoms = Object.entries(customsData).filter(([id, data]) => {
-                    return data.year === selectedYear;
+                const filteredCustoms = Object.entries(customsData).filter(([id, data]) => {[cite: 2]
+                    return data.year === selectedYear;[cite: 2]
                 });
 
-                gridWrapper.innerHTML = '';
-                filteredCustoms.forEach(([id, data]) => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-                    gridItem.setAttribute('data-target-id', id);
+                gridWrapper.innerHTML = '';[cite: 2]
+                filteredCustoms.forEach(([id, data]) => {[cite: 2]
+                    const gridItem = document.createElement('div');[cite: 2]
+                    gridItem.className = 'grid-item';[cite: 2]
+                    gridItem.setAttribute('data-target-id', id);[cite: 2]
 
-                    const file = data.file || `custom${id}.png`;
-                    let mediaHTML = '';
+                    const file = data.file || `custom${id}.png`;[cite: 2]
+                    let mediaHTML = '';[cite: 2]
 
-                    if (file && file.endsWith('.mp4')) {
-                        mediaHTML = `<video autoplay muted loop playsinline src="customs/${file}"></video>`;
+                    if (file && file.endsWith('.mp4')) {[cite: 2]
+                        mediaHTML = `<video autoplay muted loop playsinline src="customs/${file}"></video>`;[cite: 2]
                     } else {
-                        mediaHTML = `<img src="customs/${file}" alt="Custom">`;
+                        mediaHTML = `<img src="customs/${file}" alt="Custom">`;[cite: 2]
                     }
 
-                    gridItem.innerHTML = mediaHTML;
-                    gridWrapper.appendChild(gridItem);
+                    gridItem.innerHTML = mediaHTML;[cite: 2]
+                    gridWrapper.appendChild(gridItem);[cite: 2]
 
-                    // CLIC EN MINIATURA: Vuelve al slider enfocado en ese elemento
+                    // CLIC EN MINIATURA: Vuelve al slider enfocado en ese elemento[cite: 2]
                     gridItem.addEventListener('click', () => {
-                        const targetId = parseInt(id);
+                        const targetId = parseInt(id);[cite: 2]
 
-                        select.value = 'all';
-                        mainGridEl.style.display = 'none';
-                        mainSwiperEl.style.display = 'block';
-                        diceBtn.style.display = 'flex';
+                        select.value = 'all';[cite: 2]
+                        mainGridEl.style.display = 'none';[cite: 2]
+                        mainSwiperEl.style.display = 'block';[cite: 2]
+                        diceBtn.style.display = 'flex';[cite: 2]
                         
-                        swiper.update();
+                        swiper.update();[cite: 2]
 
-                        const targetSlideIndex = swiper.slides.findIndex(slide => {
-                            return parseInt(slide.getAttribute('data-id')) === targetId;
+                        const targetSlideIndex = swiper.slides.findIndex(slide => {[cite: 2]
+                            return parseInt(slide.getAttribute('data-id')) === targetId;[cite: 2]
                         });
 
-                        if (targetSlideIndex !== -1) {
-                            swiper.slideTo(targetSlideIndex, 0); 
+                        if (targetSlideIndex !== -1) {[cite: 2]
+                            swiper.slideTo(targetSlideIndex, 0); [cite: 2]
                         }
                     });
                 });
             }
         });
 
-        // LÓGICA DEL DADO
+        // LÓGICA DEL DADO[cite: 2]
         diceBtn.addEventListener('click', () => {
-            diceBtn.classList.add('shake-dice');
+            diceBtn.classList.add('shake-dice');[cite: 2]
             
-            const randomSlideIndex = Math.floor(Math.random() * order.length);
-            swiper.slideToLoop(randomSlideIndex, 600); 
+            const randomSlideIndex = Math.floor(Math.random() * order.length);[cite: 2]
+            swiper.slideToLoop(randomSlideIndex, 600); [cite: 2]
 
             setTimeout(() => {
-                diceBtn.classList.remove('shake-dice');
-            }, 500);
+                diceBtn.classList.remove('shake-dice');[cite: 2]
+            }, 500);[cite: 2]
         });
 
-        // LÓGICA DE SELECCIÓN Y DIALOG ARCADE
-        const confirmDialog = document.getElementById('confirm-dialog');
-        const dialogThemeText = document.getElementById('dialog-theme');
-        const btnNo = document.getElementById('btn-no');
-        const btnYes = document.getElementById('btn-yes');
+        // LÓGICA DE SELECCIÓN Y DIALOG ARCADE[cite: 2]
+        const confirmDialog = document.getElementById('confirm-dialog');[cite: 2]
+        const dialogThemeText = document.getElementById('dialog-theme');[cite: 2]
+        const btnNo = document.getElementById('btn-no');[cite: 2]
+        const btnYes = document.getElementById('btn-yes');[cite: 2]
 
-        // Escuchamos el clic directamente en las tarjetas del Swiper
+        // Escuchamos el clic directamente en las tarjetas del Swiper[cite: 2]
         swiper.on('click', (s, event) => {
-            // Comprobamos si se ha clicado en el elemento activo o dentro de él[cite: 1]
-            const clickedActiveSlide = event.target.closest('.swiper-slide-active');
+            // Comprobamos si se ha clicado en el elemento activo o dentro de él[cite: 2]
+            const clickedActiveSlide = event.target.closest('.swiper-slide-active');[cite: 2]
             
             if (clickedActiveSlide) {
-                // Obtenemos el ID asignado a esa tarjeta[cite: 1]
-                const customId = clickedActiveSlide.getAttribute('data-id');
-                const selectedCustom = customsData[customId];
+                // Obtenemos el ID asignado a esa tarjeta[cite: 2]
+                const customId = clickedActiveSlide.getAttribute('data-id');[cite: 2]
+                const selectedCustom = customsData[customId];[cite: 2]
 
                 if (selectedCustom) {
-                    // Actualizamos el texto del dialog con el tema actual
-                    dialogThemeText.textContent = selectedCustom.theme;
-                    // Mostramos el dialog en flex para centrarlo
-                    confirmDialog.style.display = 'flex';
+                    // Actualizamos el texto del dialog con el tema actual[cite: 2]
+                    dialogThemeText.textContent = selectedCustom.theme;[cite: 2]
+                    // Mostramos el dialog en flex para centrarlo[cite: 2]
+                    confirmDialog.style.display = 'flex';[cite: 2]
                 }
             }
         });
 
-        // Acción al pulsar "No" (Cerrar el dialog y volver al estado anterior)[cite: 1]
+        // Acción al pulsar "No" (Cerrar el dialog y volver al estado anterior)[cite: 2]
         btnNo.addEventListener('click', () => {
-            confirmDialog.style.display = 'none';
+            confirmDialog.style.display = 'none';[cite: 2]
         });
 
-        // Acción al pulsar "Sí"
+        // Acción al pulsar "Sí"[cite: 2]
         btnYes.addEventListener('click', () => {
-            console.log("Disfraz elegido!");
+            console.log("Disfraz elegido!");[cite: 2]
         });
     </script>
 </body>
