@@ -39,7 +39,7 @@
             left: 0;
             width: 100%;
             height: auto;
-            padding: 10px 0; /* Espacio para que se vea el glow de los bordes */
+            padding: 10px 0; 
             z-index: 2;
         }
 
@@ -52,7 +52,7 @@
             min-width: 280px;
             min-height: 280px;
             background: rgba(0, 0, 0, 0.5);
-            border: 4px solid #555; /* Tarjetas inactivas en gris sutil */
+            border: 4px solid #555; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -61,11 +61,11 @@
             box-sizing: border-box;
         }
 
-        /* Solo la tarjeta central/activa tiene el borde animado y resalta */
+        /* Solo la tarjeta central/activa tiene el borde animado */
         .swiper-slide-active {
             border: 4px solid #ffcc00;
             animation: border-dance 2s infinite linear;
-            transform: scale(1.05); /* Ligeramente más grande */
+            transform: scale(1.05); 
         }
 
         .swiper-slide img { 
@@ -75,7 +75,7 @@
             opacity: 88%;
         }
 
-        /* CONTENEDORES LED (Dentro de cada slide para que se muevan con él) */
+        /* CONTENEDORES LED COMPLETO */
         .marquee-container {
             position: absolute;
             bottom: 0;
@@ -85,28 +85,30 @@
             z-index: 2;
             height: 40px;
             opacity: 80%;
+            display: flex; /* Alinea los bloques de texto en horizontal */
         }
 
-        /* Ocultamos el letrero LED en las tarjetas laterales para no saturar la vista */
+        /* Ocultamos el letrero LED en las tarjetas laterales */
         .swiper-slide:not(.swiper-slide-active) .marquee-container {
             display: none;
         }
 
+        /* AJUSTE: Forzamos una sola línea y preparamos el bucle infinito */
         .marquee-text {
             display: inline-flex;
-            padding-left: 100%;
-            animation: marquee 8s linear infinite;
-            font-family: 'Helvetica', cursive;
+            white-space: nowrap; /* CORRECCIÓN 1: Evita que el texto salte de línea */
+            animation: marquee infinite 8s linear; /* CORRECCIÓN 2: Animación fluida de ciclo continuo */
+            font-family: 'Helvetica', sans-serif;
             color: #ff0505;
             font-size: 25px;
             z-index: 5;
             position: relative;
-            margin-top: 1%;
-            width: 120%;
+            align-items: center;
+            height: 100%;
         }
 
         .marquee-text span {
-            margin-inline: 6px;
+            margin-inline: 12px; /* Más espacio entre los datos */
         }
         
         .crt-overlay {
@@ -124,9 +126,10 @@
             background-size: 100% 4px;
         }
         
+        /* NUEVA ANIMACIÓN: Desplazamiento exacto del 100% del bloque gemelo */
         @keyframes marquee {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(-100%, 0); }
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
         }
 
         @keyframes border-dance {
@@ -159,21 +162,7 @@
             1: { year: "2013", theme: "Enfermera sexy" },
             2: { year: "2015", theme: "Chueca esos 5" },
             3: { year: "2023", theme: "Abuela camella" },
-            4: { year: "2022", theme: "Gernika" },
-            5: { year: "2013", theme: "Manicomio" },
-            6: { year: "2013", theme: "Kurt Cobain" },
-            7: { year: "2013", theme: "Britney Spears" },
-            8: { year: "2013", theme: "Freddy Mercury" },
-            9: { year: "2013", theme: "La Pantoja" },
-            10: { year: "2013", theme: "Aretha Franklin" },
-            11: { year: "2015", theme: "Havenido de América" },
-            12: { year: "2017", theme: "Genio" },
-            13: { year: "2017", theme: "Aladdin" },
-            14: { year: "2017", theme: "Darla (Buscando a Nemo)" },
-            15: { year: "2017", theme: "Beetlejuice" },
-            16: { year: "2018", theme: "E.T." },
-            17: { year: "2018", theme: "Albert Rivera" },
-            18: { year: "2017", theme: "Hora de aventuras" }
+            4: { year: "2022", theme: "Gernika" }
         };
 
         // Función para barajar un array
@@ -185,33 +174,36 @@
             return array;
         }
     
-        // Generamos el orden aleatorio de las imágenes
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
 
-        // Construimos las tarjetas dinámicamente en el DOM respetando el orden aleatorio
+        // Construimos las tarjetas inyectando DOS bloques idénticos de texto para el efecto infinito
         order.forEach((id) => {
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
+            
+            const textHTML = `<span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span> &nbsp;&nbsp;*&nbsp;&nbsp;`;
+            
             slide.innerHTML = `
                 <img src="customs/custom${id}.png" alt="Custom">
                 <div class="marquee-container">
                     <div class="crt-overlay"></div>
-                    <div class="marquee-text">
-                        <span>${customsData[id].year}</span> | <span>${customsData[id].theme}</span>
-                    </div>
+                    <!-- Bloque 1 -->
+                    <div class="marquee-text">${textHTML}</div>
+                    <!-- Bloque 2 (Gemelo idéntico para simular bucle sin cortes) -->
+                    <div class="marquee-text" aria-hidden="true">${textHTML}</div>
                 </div>
             `;
             wrapper.appendChild(slide);
         });
 
-        // Inicializamos Swiper con efecto de enfoque central
+        // Inicializamos Swiper
         const swiper = new Swiper('.swiper', {
-            slidesPerView: 'auto',      // Permite que las tarjetas midan lo que dice el CSS
-            centeredSlides: true,       // La tarjeta activa se queda en el centro
-            spaceBetween: 25,           // Distancia entre tarjetas (asoma la anterior/siguiente)
-            loop: true,                 // Carrusel infinito al llegar al final
-            grabCursor: true,           // Muestra mano en PC para arrastrar
+            slidesPerView: 'auto',      
+            centeredSlides: true,       
+            spaceBetween: 25,           
+            loop: true,                 
+            grabCursor: true,           
         });
     </script>
 </body>
