@@ -109,10 +109,10 @@
         let currentIndex = 1;
         const totalImages = 4; 
         const customsData = {
-            1: { year: "2013", theme: "Hospital" },
-            2: { year: "2015", theme: "Paradas de Metro" },
-            3: { year: "2023", theme: "Tribus urbanas" },
-            4: { year: "2022", theme: "Cumple de la Historia" }
+            1: { year: "2013", theme: "Enfermera sexy" },
+            2: { year: "2015", theme: "Chueca esos 5" },
+            3: { year: "2023", theme: "Abuela camella" },
+            4: { year: "2022", theme: "Gernika" }
         };
 
         // Función para crear un array de índices [1, 2, 3, 4, 5] y barajarlo
@@ -124,7 +124,7 @@
             return array;
         }
     
-        let order = shuffleArray([1, 2, 3, 4, 5]);
+        let order = shuffleArray([1, 2, 3, 4]);
         let index = 0; // Puntero para recorrer el array barajado
     
         function updateView() {
@@ -138,7 +138,7 @@
             index++;
             // Si llegamos al final, barajamos de nuevo y volvemos a empezar
             if (index >= totalImages) {
-                order = shuffleArray([1, 2, 3, 4, 5]);
+                order = shuffleArray([1, 2, 3, 4]);
                 index = 0;
             }
             updateView();
