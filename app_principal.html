@@ -33,6 +33,34 @@
             z-index: 0; 
         }
 
+        /* DESPLEGABLE ARCADE 8-BITS EN LA ESQUINA SUPERIOR IZQUIERDA */
+        .arcade-select-container {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 30; /* Por encima de todo */
+        }
+
+        .arcade-select {
+            background: #ff00ff; /* Fucsia neón */
+            color: #ffffff;
+            font-family: 'Helvetica', sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+            border: 4px solid #000000;
+            box-shadow: 4px 4px 0px #000000;
+            padding: 8px 12px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            text-shadow: 1px 1px 0px #000;
+        }
+
+        .arcade-select option {
+            background: #000000;
+            color: #ff00ff;
+        }
+
         /* DADO ARCADE BLANCO EN LA ESQUINA SUPERIOR DERECHA */
         .dice-btn {
             position: absolute;
@@ -40,11 +68,11 @@
             right: 15px;
             width: 46px;
             height: 46px;
-            z-index: 20; /* Por encima de todo */
-            background: #ffffff; /* Blanco normal */
-            border: 4px solid #000000; /* Borde negro grueso retro */
-            box-shadow: 4px 4px 0px #000000; /* Sombra pixelada negra */
-            border-radius: 4px; /* Esquinas casi cuadradas tipo pixel */
+            z-index: 20; 
+            background: #ffffff; 
+            border: 4px solid #000000; 
+            box-shadow: 4px 4px 0px #000000; 
+            border-radius: 4px; 
             cursor: pointer;
             display: flex;
             justify-content: center;
@@ -58,13 +86,12 @@
             box-shadow: 1px 1px 0px #000;
         }
 
-        /* Contenedor del SVG para centrar los puntos del dado */
         .dice-btn svg {
             width: 24px;
             height: 24px;
         }
 
-        /* Animación de agitación estilo retro al clicar */
+        /* Animación de agitación */
         .shake-dice {
             animation: dice-shake 0.5s ease-in-out;
         }
@@ -115,7 +142,6 @@
             transform: scale(1.05); 
         }
 
-        /* Estilos compartidos para imágenes y vídeos del custom */
         .swiper-slide img,
         .swiper-slide video.custom-media { 
             width: 100%; 
@@ -184,22 +210,86 @@
             50% { border-color: #ff00ff; }
             100% { border-color: #ffcc00; }
         }
+
+        /* VISTA GRID DE MINIATURAS (Estilo selección de personajes) */
+        .grid-view {
+            display: none; /* Oculto por defecto */
+            position: absolute;
+            top: 80px;
+            left: 5%;
+            width: 90%;
+            height: calc(100dvh - 120px);
+            overflow-y: auto;
+            z-index: 15;
+            background: rgba(0, 0, 0, 0.85);
+            border: 4px solid #ff00ff;
+            box-sizing: border-box;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0px 0px 15px #ff00ff;
+        }
+
+        /* Ocultar barra de scroll en navegadores modernos */
+        .grid-view::-webkit-scrollbar {
+            width: 6px;
+        }
+        .grid-view::-webkit-scrollbar-thumb {
+            background: #ffcc00;
+            border-radius: 4px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .grid-item {
+            aspect-ratio: 1 / 1;
+            background: rgba(0,0,0,0.6);
+            border: 3px solid #ffcc00;
+            box-shadow: 2px 2px 0px #000;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: transform 0.1s ease, border-color 0.1s;
+        }
+
+        .grid-item:hover, .grid-item:active {
+            border-color: #ff00ff;
+            transform: scale(1.1);
+        }
+
+        .grid-item img,
+        .grid-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Para que en las miniaturas cuadren perfectos */
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Botón de Dado Blanco Arcade (Puntos del dado pixelados) -->
+        <!-- Desplegable Retro Arcade -->
+        <div class="arcade-select-container">
+            <select class="arcade-select" id="year-select">
+                <option value="all">TODOS LOS AÑOS</option>
+                <!-- Las categorías dinámicas se añadirán por JS -->
+            </select>
+        </div>
+
+        <!-- Botón de Dado Blanco Arcade -->
         <div class="dice-btn" id="random-dice" title="¡Suerte de la noche!">
             <svg viewBox="0 0 24 24">
-                <!-- Punto Centro -->
                 <rect x="10" y="10" width="4" height="4" fill="#000000" />
-                <!-- Punto Arriba Izquierda -->
                 <rect x="4" y="4" width="4" height="4" fill="#000000" />
-                <!-- Punto Arriba Derecha -->
                 <rect x="16" y="4" width="4" height="4" fill="#000000" />
-                <!-- Punto Abajo Izquierda -->
                 <rect x="4" y="16" width="4" height="4" fill="#000000" />
-                <!-- Punto Abajo Derecha -->
                 <rect x="16" y="16" width="4" height="4" fill="#000000" />
             </svg>
         </div>
@@ -210,10 +300,17 @@
             <source src="disco_movil.mp4" media="(min-width: 769px)">
         </video>
         
-        <!-- CARRUSEL TIPO TINDER -->
-        <div class="swiper">
+        <!-- VISTA SLIDER (TINDER) -->
+        <div class="swiper" id="main-swiper">
             <div class="swiper-wrapper" id="slides-wrapper">
-                <!-- Las tarjetas dinámicas se inyectarán aquí con JS -->
+                <!-- Se inyecta dinámicamente -->
+            </div>
+        </div>
+
+        <!-- VISTA GRID (MINIATURAS SELECCIÓN ARCADE) -->
+        <div class="grid-view" id="main-grid">
+            <div class="grid-container" id="grid-wrapper">
+                <!-- Se inyectan las miniaturas aquí -->
             </div>
         </div>
     </div>
@@ -223,15 +320,15 @@
 
     <script>
         const customsData = {
-            01: { year: "2013", category: "Hospital", theme: "Enfermera sexy", file: "custom1.jpg" },
-            02: { year: "2015", category: "Paradas de Metro", theme: "Chueca esos 5", file: "custom2.png" },
-            03: { year: "2023", category: "Tribus urbanas", theme: "Jubilada", file: "custom3.jpg" },
-            04: { year: "2022", category: "La Historia", theme: "Gernika", file: "custom4.png" },
-            05: { year: "2013", category: "Hospital", theme: "Manicomio", file: "custom5.png" },
-            06: { year: "2013", category: "Los Grammys", theme: "Kurt Cobain", file: "custom6.png" },
-            07: { year: "2013", category: "Los Grammys", theme: "Britney Spears", file: "custom7.png" },
-            08: { year: "2013", category: "Los Grammys", theme: "Freddy Mercury & Toni Moreno", file: "custom8.png" },
-            09: { year: "2013", category: "Los Grammys", theme: "La Pantoja", file: "custom9.png" },
+            1: { year: "2013", category: "Hospital", theme: "Enfermera sexy", file: "custom1.jpg" },
+            2: { year: "2015", category: "Paradas de Metro", theme: "Chueca esos 5", file: "custom2.png" },
+            3: { year: "2023", category: "Tribus urbanas", theme: "Jubilada", file: "custom3.jpg" },
+            4: { year: "2022", category: "La Historia", theme: "Gernika", file: "custom4.png" },
+            5: { year: "2013", category: "Hospital", theme: "Manicomio", file: "custom5.png" },
+            6: { year: "2013", category: "Los Grammys", theme: "Kurt Cobain", file: "custom6.png" },
+            7: { year: "2013", category: "Los Grammys", theme: "Britney Spears", file: "custom7.png" },
+            8: { year: "2013", category: "Los Grammys", theme: "Freddy Mercury & Toni Moreno", file: "custom8.png" },
+            9: { year: "2013", category: "Los Grammys", theme: "La Pantoja", file: "custom9.png" },
             10: { year: "2013", category: "Los Grammys", theme: "Aretha Franklin", file: "custom10.png" },
             11: { year: "2015", category: "Paradas de Metro", theme: "Havenido de América", file: "custom11.png" },
             12: { year: "2017", category: "Películas", theme: "Genio", file: "custom12.png" },
@@ -271,10 +368,10 @@
             46: { year: "2021", category: "La Tele", theme: "Art Attack", file: "custom46.png" },
             47: { year: "2022", category: "La Historia", theme: "Amadeo de Cebolla", file: "custom47.png" },
             48: { year: "2022", category: "La Historia", theme: "Stalin", file: "custom48.png" },
-			49: { year: "2022", category: "La Historia", theme: "Da Vinci & la Mona Lisa", file: "custom49.png" },
-			50: { year: "2022", category: "La Historia", theme: "Templarios", file: "custom50.png" },
-			51: { year: "2022", category: "La Historia", theme: "Torres Gemelas", file: "custom51.mp4" },			
-			52: { year: "2022", category: "La Historia", theme: "Torrequemada (La Inquisición)", file: "custom52.png" },
+            49: { year: "2022", category: "La Historia", theme: "Da Vinci & la Mona Lisa", file: "custom49.png" },
+            50: { year: "2022", category: "La Historia", theme: "Templarios", file: "custom50.png" },
+            51: { year: "2022", category: "La Historia", theme: "Torres Gemelas", file: "custom51.mp4" },			
+            52: { year: "2022", category: "La Historia", theme: "Torrequemada (La Inquisición)", file: "custom52.png" },
             53: { year: "2022", category: "La Historia", theme: "Bruja", file: "custom53.png" },
             54: { year: "2023", category: "Tribus urbanas", theme: "Facha", file: "custom54.png" },
             55: { year: "2023", category: "Tribus urbanas", theme: "Antifa", file: "custom55.png" },
@@ -322,6 +419,7 @@
             97: { year: "2025", category: "Dibujitos", theme: "Maestro Mutenrroy", file: "custom97.png" }
         };
 
+        // Función para barajar un array
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -330,14 +428,18 @@
             return array;
         }
     
+        // Obtenemos el orden aleatorio general para el slider
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
     
+        // Inyectamos las tarjetas en el Slider
         order.forEach((id) => {
             if (!customsData[id]) return;
     
             const slide = document.createElement('div');
             slide.className = 'swiper-slide';
+            // Asignamos el ID del custom como atributo de datos para localizarlo rápido después
+            slide.setAttribute('data-id', id);
             
             const file = customsData[id].file || `custom${id}.png`;
             let mediaHTML = '';
@@ -370,8 +472,97 @@
             grabCursor: true,           
         });
 
-        // LÓGICA DEL DADO
+        // GENERACIÓN DINÁMICA DE OPCIONES EN EL SELECT
+        const select = document.getElementById('year-select');
+        
+        // Agrupamos categorías por año (con estructura id: { year, category })
+        const selectOptionsMap = {};
+        Object.values(customsData).forEach(item => {
+            if (!selectOptionsMap[item.year]) {
+                selectOptionsMap[item.year] = item.category;
+            }
+        });
+
+        // Ordenamos los años e insertamos las opciones en el select
+        Object.keys(selectOptionsMap).sort().forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = `${year} - ${selectOptionsMap[year].toUpperCase()}`;
+            select.appendChild(option);
+        });
+
+        // LOGICA DE CAMBIO DE VISTA (DESPLEGABLE)
+        const mainSwiperEl = document.getElementById('main-swiper');
+        const mainGridEl = document.getElementById('main-grid');
+        const gridWrapper = document.getElementById('grid-wrapper');
         const diceBtn = document.getElementById('random-dice');
+
+        select.addEventListener('change', (e) => {
+            const selectedYear = e.target.value;
+
+            if (selectedYear === 'all') {
+                // Volvemos a mostrar el Slider
+                mainGridEl.style.display = 'none';
+                mainSwiperEl.style.display = 'block';
+                diceBtn.style.display = 'flex';
+                swiper.update();
+            } else {
+                // Ocultamos el Slider y el Dado, mostramos las miniaturas
+                mainSwiperEl.style.display = 'none';
+                diceBtn.style.display = 'none';
+                mainGridEl.style.display = 'block';
+
+                // Filtramos los customs pertenecientes al año seleccionado
+                const filteredCustoms = Object.entries(customsData).filter(([id, data]) => {
+                    return data.year === selectedYear;
+                });
+
+                // Limpiamos y repoblamos la cuadrícula de miniaturas
+                gridWrapper.innerHTML = '';
+                filteredCustoms.forEach(([id, data]) => {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    gridItem.setAttribute('data-target-id', id);
+
+                    const file = data.file || `custom${id}.png`;
+                    let mediaHTML = '';
+
+                    if (file && file.endsWith('.mp4')) {
+                        mediaHTML = `<video autoplay muted loop playsinline src="customs/${file}"></video>`;
+                    } else {
+                        mediaHTML = `<img src="customs/${file}" alt="Custom">`;
+                    }
+
+                    gridItem.innerHTML = mediaHTML;
+                    gridWrapper.appendChild(gridItem);
+
+                    // CLIC EN MINIATURA: Vuelve al slider enfocado en ese elemento
+                    gridItem.addEventListener('click', () => {
+                        const targetId = parseInt(id);
+
+                        // Volvemos al select general y mostramos el slider
+                        select.value = 'all';
+                        mainGridEl.style.display = 'none';
+                        mainSwiperEl.style.display = 'block';
+                        diceBtn.style.display = 'flex';
+                        
+                        // Actualizamos Swiper para que registre los cambios de pantalla
+                        swiper.update();
+
+                        // Buscamos el índice del slide que contiene este custom ID
+                        const targetSlideIndex = swiper.slides.findIndex(slide => {
+                            return parseInt(slide.getAttribute('data-id')) === targetId;
+                        });
+
+                        if (targetSlideIndex !== -1) {
+                            swiper.slideTo(targetSlideIndex, 0); // Salto inmediato al slide seleccionado
+                        }
+                    });
+                });
+            }
+        });
+
+        // LÓGICA DEL DADO
         diceBtn.addEventListener('click', () => {
             diceBtn.classList.add('shake-dice');
             
