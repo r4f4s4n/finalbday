@@ -402,8 +402,6 @@
         }
 
         /* PANTALLA DE ÉXTASIS / CONFIRMACIÓN FINAL */
-		/*background: rgba(0, 0, 0, 0.75); 
-            backdrop-filter: blur(2px);*/
         .final-screen-overlay {
             display: none; 
             position: absolute;
@@ -411,10 +409,10 @@
             left: 0;
             width: 100vw;
             height: 100dvh;
-            -webkit-backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.75); 
             z-index: 90;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
             padding: 20px;
@@ -468,7 +466,7 @@
             line-height: 1.6;
             text-shadow: 2px 2px 0px #000000;
             text-transform: uppercase;
-            margin-bottom: -750px;;
+            margin-bottom: 0;
         }
 
         .final-text-box span.highlight {
@@ -499,6 +497,7 @@
             align-items: center;
             overflow: hidden;
             box-sizing: border-box;
+            margin-top: 70px;
         }
 
         .final-preview-container img,
@@ -578,17 +577,17 @@
                 </button>
             </div>
 
+            <!-- Contenedor Miniatura del media del Disfraz -->
+            <div class="final-preview-container" id="final-preview-box">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+
             <!-- Texto Arcade Informativo -->
             <div class="final-text-box">
                 ¡LOS VAMOS A PETAR DEL <span class="highlight">4 AL 8 DE DICIEMBRE</span> EN CAN VIDAL RURAL!<br><br>
                 SON <span class="highlight">250€</span>, ME LOS PUEDES ENVIAR A:
                 <span class="iban">ES86 8547 8897 5203 9999</span><br>
                 ¡GRACIAS!
-            </div>
-
-            <!-- Contenedor Miniatura del media del Disfraz -->
-            <div class="final-preview-container" id="final-preview-box">
-                <!-- Se inyecta dinámicamente -->
             </div>
         </div>
     </div>
