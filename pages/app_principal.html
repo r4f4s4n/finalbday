@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script>
+        // Ruta legacy: la vista principal ahora se monta desde index.
+        if (window.top === window.self && !sessionStorage.getItem('fb-allow-legacy-pages')) {
+            window.location.replace('../index.html');
+        }
+    </script>
     <!-- Carga de estilos de Swiper.js para el slider táctil -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script>
+        if (sessionStorage.getItem('fb-crossfade-to-principal') === '1') {
+            document.documentElement.classList.add('crossfade-enter');
+        }
+    </script>
     
     <style>
         body, html { 
@@ -14,6 +25,15 @@
             height: 100dvh; 
             overflow: hidden; 
             background: #000; 
+        }
+
+        html.crossfade-enter body {
+            opacity: 0;
+        }
+
+        html.crossfade-enter body.is-crossfade-visible {
+            opacity: 1;
+            transition: opacity 0.65s ease;
         }
         
         .container { 
@@ -539,6 +559,14 @@
 
     <script>
         window.addEventListener('DOMContentLoaded', async () => {
+            const shouldCrossfadeIn = document.documentElement.classList.contains('crossfade-enter');
+            if (shouldCrossfadeIn) {
+                sessionStorage.removeItem('fb-crossfade-to-principal');
+                requestAnimationFrame(() => {
+                    document.body.classList.add('is-crossfade-visible');
+                });
+            }
+
             await loadComponents({
                 '[data-component="controls"]': '../components/app-controls.html',
                 '[data-component="media-shell"]': '../components/app-media-shell.html',
@@ -577,16 +605,16 @@
 		
         const customsData = {
             1: { year: "2013", category: "Hospital", theme: "Enfermera sexy", file: "custom1.jpg" },
-            2: { year: "2015", category: "Paradas de Metro", theme: "Chueca esos 5", file: "custom2.png" },
+            2: { year: "2014", category: "Paradas de Metro", theme: "Chueca esos 5", file: "custom2.png" },
             3: { year: "2023", category: "Tribus urbanas", theme: "Jubilada", file: "custom3.jpg" },
             4: { year: "2022", category: "La Historia", theme: "Gernika", file: "custom4.png" },
             5: { year: "2013", category: "Hospital", theme: "Manicomio", file: "custom5.png" },
-            6: { year: "2014", category: "Los Grammys", theme: "Kurt Cobain", file: "custom6.png" },
-            7: { year: "2014", category: "Los Grammys", theme: "Britney Spears", file: "custom7.png" },
-            8: { year: "2014", category: "Los Grammys", theme: "Freddy Mercury & Toni Moreno", file: "custom8.png" },
-            9: { year: "2014", category: "Los Grammys", theme: "La Pantoja", file: "custom9.png" },
-            10: { year: "2014", category: "Los Grammys", theme: "Aretha Franklin", file: "custom10.png" },
-            11: { year: "2015", category: "Paradas de Metro", theme: "Havenido de América", file: "custom11.png" },
+            6: { year: "2015", category: "Los Grammys", theme: "Kurt Cobain", file: "custom6.png" },
+            7: { year: "2015", category: "Los Grammys", theme: "Britney Spears", file: "custom7.png" },
+            8: { year: "2015", category: "Los Grammys", theme: "Freddy Mercury", file: "custom8.png" },
+            9: { year: "2015", category: "Los Grammys", theme: "La Pantoja", file: "custom9.png" },
+            10: { year: "2015", category: "Los Grammys", theme: "Aretha Franklin", file: "custom10.png" },
+            11: { year: "2014", category: "Paradas de Metro", theme: "Havenido de América", file: "custom11.png" },
             12: { year: "2017", category: "Películas", theme: "Genio", file: "custom12.png" },
             13: { year: "2017", category: "Películas", theme: "Aladdín", file: "custom13.png" },
             14: { year: "2017", category: "Películas", theme: "Darla (Buscando a Nemo)", file: "custom14.png" },
@@ -672,7 +700,27 @@
             94: { year: "2025", category: "Dibujitos", theme: "Gru Princesa", file: "custom94.png" },
             95: { year: "2025", category: "Dibujitos", theme: "Frozen", file: "custom95.png" },
             96: { year: "2025", category: "Dibujitos", theme: "HIM", file: "custom96.png" },
-            97: { year: "2025", category: "Dibujitos", theme: "Maestro Mutenroi", file: "custom97.png" }
+            97: { year: "2025", category: "Dibujitos", theme: "Maestro Mutenroi", file: "custom97.png" },
+            98: { year: "2013", category: "Hospital", theme: "Dr. House", file: "custom98.png" },
+            99: { year: "2014", category: "Paradas de Metro", theme: "Barajas", file: "custom99.png" },
+            100: { year: "2014", category: "Paradas de Metro", theme: "Oporto", file: "custom100.png" },
+            101: { year: "2015", category: "Los Grammys", theme: "Lucrecia", file: "custom101.png" },
+            102: { year: "2015", category: "Los Grammys", theme: "Tony Moreno (Eskorzo)", file: "custom102.png" },
+            103: { year: "2017", category: "Películas", theme: "Chewbacca", file: "custom103.png" },
+            104: { year: "2017", category: "Películas", theme: "Audrey Hepburn", file: "custom104.png" },
+            105: { year: "2017", category: "Películas", theme: "Charles Chaplin", file: "custom105.png" },
+            106: { year: "2017", category: "Películas", theme: "Jumanji", file: "custom106.png" },
+            107: { year: "2017", category: "Películas", theme: "Cumple: La película", file: "custom107.png" },
+            108: { year: "2018", category: "Ciencia ficción", theme: "Rick y Morty", file: "custom108.mp4" },
+            109: { year: "2018", category: "Ciencia ficción", theme: "Orange is the new black", file: "custom109.mp4" },
+            110: { year: "2018", category: "Ciencia ficción", theme: "Perdidos", file: "custom109.png" },
+            111: { year: "2019", category: "Década 2010", theme: "Pablo Casado", file: "custom111.png" },
+            112: { year: "2019", category: "Década 2010", theme: "La Rosalía", file: "custom112.png" },
+            113: { year: "2019", category: "Década 2010", theme: "Waka Waka", file: "custom113.png" },
+            114: { year: "2019", category: "Década 2010", theme: "Steve Jobs", file: "custom114.png" },
+            115: { year: "2022", category: "La Historia", theme: "El Huno", file: "custom115.png" },
+            116: { year: "2022", category: "La Historia", theme: "El Arca de Noé", file: "custom116.png" },
+            117: { year: "2023", category: "Tribus urbanas", theme: "Marc con ropa juvenil", file: "custom117.png" }
         };
 
         function shuffleArray(array) {
