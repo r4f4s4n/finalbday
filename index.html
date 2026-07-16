@@ -310,15 +310,43 @@
             while ((match = attrRegex.exec(text)) !== null) {
                 const raw = match[2].trim();
                 if (!isValidResourcePath(raw)) continue;
+                if (raw.indexOf('${') !== -1) continue;
                 urls.add(new URL(raw, baseUrl).href);
             }
 
             while ((match = assetRegex.exec(text)) !== null) {
-                urls.add(new URL(match[1].trim(), baseUrl).href);
+                const rawAsset = match[1].trim();
+                if (rawAsset.indexOf('${') !== -1) continue;
+                urls.add(new URL(rawAsset, baseUrl).href);
             }
 
             while ((match = componentRegex.exec(text)) !== null) {
-                urls.add(new URL(match[1].trim(), baseUrl).href);
+                const rawComponent = match[1].trim();
+                if (rawComponent.indexOf('${') !== -1) continue;
+                urls.add(new URL(rawComponent, baseUrl).href);
+            }
+
+            return urls;
+        }
+
+        function extractPrincipalDataResources(pageHtml, baseUrl) {
+            const urls = new Set();
+
+            // Archivos de customs: file: "custom123.png"
+            const customFileRegex = /file\s*:\s*"(custom\d+\.[a-z0-9]+)"/gi;
+            let customMatch;
+            while ((customMatch = customFileRegex.exec(pageHtml)) !== null) {
+                const fileName = customMatch[1];
+                urls.add(new URL('../assets/customs/' + fileName, baseUrl).href);
+            }
+
+            // Videos de fondo de la principal (disco/bar1/bar2...)
+            const bgVideoRegex = /const\s+BG_VIDEO_[A-Z_]+\s*=\s*'([^']+)'/gi;
+            let bgMatch;
+            while ((bgMatch = bgVideoRegex.exec(pageHtml)) !== null) {
+                const rawPath = bgMatch[1].trim();
+                if (!isValidResourcePath(rawPath)) continue;
+                urls.add(new URL(rawPath, baseUrl).href);
             }
 
             return urls;
@@ -352,6 +380,13 @@
                 for (const url of found) {
                     resources.add(url);
                 }
+
+                if (pagePath === 'pages/app_principal.html') {
+                    const principalDataResources = extractPrincipalDataResources(text, pageUrl.href);
+                    for (const url of principalDataResources) {
+                        resources.add(url);
+                    }
+                }
             }
 
             const sameOriginResources = [];
@@ -359,6 +394,9 @@
                 try {
                     const parsed = new URL(url);
                     if (parsed.origin === location.origin) {
+                        if (parsed.href.indexOf('${') !== -1 || parsed.href.indexOf('%7B') !== -1) {
+                            continue;
+                        }
                         sameOriginResources.push(parsed.href);
                     }
                 } catch (e) {
@@ -413,16 +451,33 @@
             const total = resourceUrls.length;
             updateProgress(0, total, 'Descargando recursos...');
 
-            await Promise.all(resourceUrls.map(async (url) => {
-                try {
-                    await preloadResource(url);
-                } catch (error) {
-                    console.warn('Error de precarga:', url, error);
-                } finally {
-                    done += 1;
-                    updateProgress(done, total, 'Descargando recursos...');
+            const maxConcurrent = 10;
+            let index = 0;
+
+            async function worker() {
+                while (index < resourceUrls.length) {
+                    const currentIndex = index;
+                    index += 1;
+                    const url = resourceUrls[currentIndex];
+
+                    try {
+                        await preloadResource(url);
+                    } catch (error) {
+                        console.warn('Error de precarga:', url, error);
+                    } finally {
+                        done += 1;
+                        updateProgress(done, total, 'Descargando recursos...');
+                    }
                 }
-            }));
+            }
+
+            const workers = [];
+            const workerCount = Math.min(maxConcurrent, resourceUrls.length);
+            for (let i = 0; i < workerCount; i++) {
+                workers.push(worker());
+            }
+
+            await Promise.all(workers);
         }
 
         function extractPrincipalStyle(pageHtml) {
