@@ -22,8 +22,8 @@
             height: 100dvh; 
         }
         
-        /* Vídeo de fondo general de la app */
-        #app-bg-video { 
+        /* Vídeo de fondo general de la app (dos capas superpuestas para crossfade) */
+        .bg-video { 
             position: absolute; 
             top: 0; 
             left: 50%; 
@@ -31,7 +31,14 @@
             height: 100dvh; 
             width: auto; 
             z-index: 0; 
-            transition: opacity 0.5s ease;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
+        }
+
+        .bg-video.is-active {
+            opacity: 1;
+            z-index: 1;
         }
 
         /* PANTALLA DE CARGA RETRO TRANSLÚCIDA */
@@ -543,10 +550,11 @@
             </svg>
         </div>
 
-        <!-- Vídeo de fondo principal -->
-        <video autoplay muted loop playsinline id="app-bg-video">
+        <!-- Vídeo de fondo principal (dos capas para crossfade sin cortes) -->
+        <video class="bg-video is-active" autoplay muted loop playsinline id="app-bg-video">
             <source src="disco_movil.mp4" id="bg-video-source">
         </video>
+        <video class="bg-video" muted playsinline id="app-bg-video-alt"></video>
         
         <!-- VISTA SLIDER (TINDER) -->
         <div class="swiper" id="main-swiper">
@@ -1016,10 +1024,20 @@
         const finalPreviewBox = document.getElementById('final-preview-box');
         const finalTextBox = document.getElementById('final-text-box');
         const btnBack = document.getElementById('btn-back');
-        const bgVideo = document.getElementById('app-bg-video');
+        const bgVideoA = document.getElementById('app-bg-video');
+        const bgVideoB = document.getElementById('app-bg-video-alt');
+        let activeBgVideo = bgVideoA;
+        let standbyBgVideo = bgVideoB;
+
         const BG_VIDEO_ORIGINAL = 'disco_movil.mp4';
         const BG_VIDEO_TRANSITION = 'bar1-movil.mp4';
         const BG_VIDEO_FINAL = 'bar2-movil.mp4';
+
+        // Identifica la secuencia de transición de fondo en curso. Los callbacks
+        // async (canplay/ended/playing) comprueban que su token siga siendo el
+        // vigente antes de actuar; si no, es que "Atrás" (u otra transición)
+        // canceló esta secuencia mientras tanto, y no hacen nada.
+        let bgTransitionToken = 0;
 
         // Oculta el texto y la miniatura final (estado inicial, antes de que
         // arranque el vídeo bar2).
@@ -1034,48 +1052,92 @@
             finalPreviewBox.classList.add('is-visible');
         }
 
-        // Cuando termina de reproducirse el vídeo de transición (bar1),
-        // se deja como fondo el segundo vídeo (bar2) en loop. El texto y la
-        // miniatura no se muestran hasta que bar2 empieza a reproducirse.
-        function onBgTransitionEnded() {
-            bgVideo.removeEventListener('ended', onBgTransitionEnded);
-            bgVideo.loop = true;
-            bgVideo.src = BG_VIDEO_FINAL;
-            bgVideo.load();
+        // Intercambia qué capa de vídeo está visible (crossfade vía opacidad CSS).
+        function swapActiveBgVideo() {
+            activeBgVideo.classList.remove('is-active');
+            standbyBgVideo.classList.add('is-active');
+            const prev = activeBgVideo;
+            activeBgVideo = standbyBgVideo;
+            standbyBgVideo = prev;
+            prev.pause(); // la capa que queda oculta no necesita seguir sonando/gastando recursos
+        }
 
-            bgVideo.addEventListener('playing', revealFinalContent, { once: true });
+        // Precarga `src` en la capa oculta (sin activarla todavía).
+        function preloadStandbyBgVideo(src) {
+            standbyBgVideo.src = src;
+            standbyBgVideo.load();
+        }
 
-            const playPromise = bgVideo.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {
-                    // Si el autoplay falla, no dejamos el contenido oculto para siempre
-                    revealFinalContent();
-                });
+        // Carga `src` en la capa oculta y, en cuanto puede reproducirse, hace el
+        // crossfade hacia ella. Si ya estaba precargada de antemano (p.ej. bar2
+        // precargado mientras sonaba bar1), el cambio es instantáneo y sin corte.
+        function transitionBgVideoTo(src, { loop = true, token, onActive } = {}) {
+            const incoming = standbyBgVideo;
+
+            function activateIncoming() {
+                if (token !== bgTransitionToken) return; // secuencia cancelada
+                incoming.loop = loop;
+                incoming.play().catch(() => {});
+                swapActiveBgVideo();
+                if (onActive) onActive(incoming);
             }
+
+            const alreadyLoaded = incoming.readyState >= 3 &&
+                incoming.currentSrc && incoming.currentSrc.indexOf(src) !== -1;
+
+            if (alreadyLoaded) {
+                activateIncoming();
+                return;
+            }
+
+            incoming.addEventListener('canplay', function onCanPlay() {
+                incoming.removeEventListener('canplay', onCanPlay);
+                activateIncoming();
+            });
+            incoming.src = src;
+            incoming.load();
         }
 
-        // Al confirmar el disfraz: se reproduce una vez el vídeo de transición
-        // y, al acabar, se queda de fondo el segundo vídeo.
+        // Al confirmar el disfraz ("Sí"): crossfade al vídeo de transición (bar1)
+        // y, mientras suena, se precarga bar2 en segundo plano para que el
+        // siguiente cambio (al terminar bar1) sea instantáneo y sin negro. Al
+        // terminar bar1, crossfade a bar2 (loop) y sólo entonces se revela el
+        // texto/miniatura finales.
         function playBgTransition() {
-            bgVideo.removeEventListener('ended', onBgTransitionEnded);
-            bgVideo.removeEventListener('playing', revealFinalContent);
-            bgVideo.loop = false;
-            bgVideo.src = BG_VIDEO_TRANSITION;
-            bgVideo.load();
-            bgVideo.play().catch(e => console.log("Auto-play prevenido:", e));
-            bgVideo.addEventListener('ended', onBgTransitionEnded);
+            const myToken = ++bgTransitionToken;
+            hideFinalContent();
+
+            transitionBgVideoTo(BG_VIDEO_TRANSITION, {
+                loop: false,
+                token: myToken,
+                onActive: (bar1Video) => {
+                    preloadStandbyBgVideo(BG_VIDEO_FINAL);
+
+                    bar1Video.addEventListener('ended', function onBar1Ended() {
+                        bar1Video.removeEventListener('ended', onBar1Ended);
+                        if (myToken !== bgTransitionToken) return;
+
+                        transitionBgVideoTo(BG_VIDEO_FINAL, {
+                            loop: true,
+                            token: myToken,
+                            onActive: (bar2Video) => {
+                                bar2Video.addEventListener('playing', function onBar2Playing() {
+                                    bar2Video.removeEventListener('playing', onBar2Playing);
+                                    if (myToken === bgTransitionToken) revealFinalContent();
+                                }, { once: true });
+                            }
+                        });
+                    });
+                }
+            });
         }
 
-        // Al pulsar "Atrás": se cancela cualquier transición pendiente y se
-        // recupera el vídeo de fondo original en loop.
+        // Al pulsar "Atrás": se cancela cualquier transición pendiente (nuevo
+        // token) y se recupera el vídeo original con crossfade.
         function restoreOriginalBgVideo() {
-            bgVideo.removeEventListener('ended', onBgTransitionEnded);
-            bgVideo.removeEventListener('playing', revealFinalContent);
-            bgVideo.loop = true;
-            bgVideo.src = BG_VIDEO_ORIGINAL;
-            bgVideo.load();
-            bgVideo.play().catch(() => {});
+            const myToken = ++bgTransitionToken;
             hideFinalContent();
+            transitionBgVideoTo(BG_VIDEO_ORIGINAL, { loop: true, token: myToken });
         }
 
         swiper.on('click', (s, event) => {
