@@ -409,7 +409,6 @@
             left: 0;
             width: 100vw;
             height: 100dvh;
-            background: rgba(0, 0, 0, 0.75); 
             z-index: 90;
             flex-direction: column;
             justify-content: space-between;
@@ -740,6 +739,7 @@
         let totalMediaToLoad = 0;
         let mediaLoadedCount = 0;
         let isAppReady = false; 
+        const loaderTextEl = document.querySelector('.arcade-loader-text');
 
         function forceStartApp() {
             if (isAppReady) return;
@@ -776,17 +776,27 @@
         function checkAllMediaLoaded() {
             if (isAppReady) return;
             mediaLoadedCount++;
+            if (loaderTextEl) {
+                loaderTextEl.textContent = `CARGANDO... ${mediaLoadedCount}/${totalMediaToLoad}`;
+            }
             if (mediaLoadedCount >= totalMediaToLoad) {
                 forceStartApp();
             }
         }
 
+        // Fusible de seguridad: si por lo que sea algún recurso no llega a
+        // disparar su evento de carga (fallo de red, formato no soportado, etc.),
+        // esto evita que el loader se quede colgado para siempre. Debe ser
+        // generoso: con decenas de fotos y vídeos cargando a la vez, esperar
+        // más de 4 segundos es completamente normal, así que un fusible corto
+        // saltaba casi siempre ANTES de que los recursos reales terminasen
+        // de cargar, mostrando la app con vídeos/fotos a medias.
         setTimeout(() => {
             if (!isAppReady) {
                 console.warn("Fusible de carga activado (Timeout). Iniciando aplicación de forma forzada.");
                 forceStartApp();
             }
-        }, 4000); 
+        }, 20000); 
     
         // Construye el nodo DOM de una slide a partir de su id.
         // trackLoad=true sólo se usa en la carga inicial, para saber cuándo ocultar el loader.
@@ -804,7 +814,7 @@
 
             const loadAttrs = trackLoad
                 ? (isVideo
-                    ? `oncanplaythrough="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()"`
+                    ? `onloadeddata="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()"`
                     : `onload="checkAllMediaLoaded()" onerror="checkAllMediaLoaded()"`)
                 : '';
 
