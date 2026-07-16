@@ -3,66 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Final Bday</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>Final Bday - Cargando</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-        .container { position: relative; width: 100vw; height: 100vh; }
-        video { position: absolute; 
-            top: 0; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            height: 100dvh; 
-            width: auto; 
-            z-index: 0;
-       }
-        
-        /* Capa para el vídeo de transición, oculta por defecto */
-        #transition-video { display: none; z-index: 10; }
-        
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 5; }
-        .btn-start {
-            font-family: 'Press Start 2P', cursive; padding: 20px 40px; background: #ffcc00; 
-            border: 6px solid #000; box-shadow: 8px 8px 0px #8B0000; cursor: pointer; 
-            text-decoration: none; color: #000; font-size: 24px; transition: 0.2s;
+        :root {
+            --bg-a: #07070f;
+            --bg-b: #1a0a2b;
+            --ink: #f4efe1;
+            --accent: #ffcc00;
+            --accent-2: #ff00ff;
+            --frame: #000000;
         }
-        .btn-start:hover { transform: scale(1.1); background: #fff; }
+
+        * { box-sizing: border-box; }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100%;
+            background:
+                radial-gradient(circle at 20% 20%, rgba(255, 204, 0, 0.2), transparent 40%),
+                radial-gradient(circle at 80% 0%, rgba(0, 224, 255, 0.25), transparent 35%),
+                linear-gradient(140deg, var(--bg-a), var(--bg-b));
+            color: var(--ink);
+            font-family: 'VT323', monospace;
+        }
+
+        .loader-page {
+            min-height: 100dvh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .loader-card {
+            width: min(700px, 100%);
+            border: 6px solid var(--frame);
+            background: rgba(0, 0, 0, 0.75);
+            box-shadow: 10px 10px 0 #000;
+            padding: 28px;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: clamp(20px, 4.2vw, 34px);
+            line-height: 1.35;
+            color: var(--accent);
+        }
+
+        p {
+            margin: 0 0 18px;
+            font-size: clamp(22px, 3.4vw, 30px);
+            letter-spacing: 0.8px;
+        }
+
+        .progress-wrap {
+            width: 100%;
+            height: 22px;
+            border: 4px solid #000;
+            background: #211036;
+            box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            transition: width 0.2s ease;
+        }
+
+        .meta {
+            margin-top: 14px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: clamp(22px, 3vw, 28px);
+        }
+
+        .status {
+            margin-top: 10px;
+            min-height: 28px;
+            font-size: clamp(20px, 2.8vw, 26px);
+            opacity: 0.95;
+        }
+
+        .error {
+            color: #ff9f9f;
+        }
+
+        .ok {
+            color: #b4ff9f;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <video autoplay muted loop playsinline id="bg-video">
-            <source src="assets/videos/video_movil.mp4" media="(max-width: 768px)">
-            <source src="assets/videos/video_escritorio.mp4" media="(min-width: 769px)">
-        </video>
-        
-        <video id="transition-video" playsinline>
-            <source src="assets/videos/zoom_movil.mp4" media="(max-width: 768px)">
-            <source src="assets/videos/zoom_escritorio.mp4" media="(min-width: 769px)">
-        </video>
+    <main class="loader-page">
+        <section class="loader-card" aria-label="Pantalla de carga">
+            <h1>FINAL BDAY</h1>
+            <p>Cargando recursos de la app...</p>
 
-        <div class="overlay" id="overlay">
-            <button class="btn-start" onclick="iniciarTransicion()">START</button>
-        </div>
-    </div>
+            <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso de carga">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <div class="meta">
+                <div id="progress-text">0%</div>
+                <div id="progress-count">0 / 0</div>
+            </div>
+
+            <div class="status" id="status-text">Preparando manifiesto...</div>
+        </section>
+    </main>
 
     <script>
-        function iniciarTransicion() {
-            // 1. Ocultar el botón
-            document.getElementById('overlay').style.display = 'none';
-            
-            // 2. Ocultar el fondo y mostrar el de transición
-            document.getElementById('bg-video').style.display = 'none';
-            const transVideo = document.getElementById('transition-video');
-            transVideo.style.display = 'block';
-            transVideo.play();
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+        const progressCount = document.getElementById('progress-count');
+        const statusText = document.getElementById('status-text');
 
-            // 3. Esperar 7 segundos y redirigir
-            setTimeout(() => {
-                window.location.href = "pages/app_principal.html";
-            }, 7000);
+        function updateProgress(done, total, statusMessage) {
+            const safeTotal = total > 0 ? total : 1;
+            const percent = Math.min(100, Math.round((done / safeTotal) * 100));
+            progressFill.style.width = percent + '%';
+            progressText.textContent = percent + '%';
+            progressCount.textContent = done + ' / ' + total;
+            if (statusMessage) {
+                statusText.textContent = statusMessage;
+            }
+            const progressbar = document.querySelector('.progress-wrap');
+            progressbar.setAttribute('aria-valuenow', String(percent));
         }
+
+        function isValidResourcePath(path) {
+            if (!path) return false;
+            if (path.startsWith('data:')) return false;
+            if (path.startsWith('javascript:')) return false;
+            if (path.startsWith('#')) return false;
+            return true;
+        }
+
+        function extractResourceUrls(text, baseUrl) {
+            const urls = new Set();
+            const attrRegex = /(src|href)=["']([^"']+)["']/gi;
+            const assetRegex = /["'](\.\.\/assets\/[^"']+)["']/gi;
+            const componentRegex = /["'](\.\.\/components\/[^"']+)["']/gi;
+
+            let match;
+            while ((match = attrRegex.exec(text)) !== null) {
+                const raw = match[2].trim();
+                if (!isValidResourcePath(raw)) continue;
+                urls.add(new URL(raw, baseUrl).href);
+            }
+
+            while ((match = assetRegex.exec(text)) !== null) {
+                const rawAsset = match[1].trim();
+                urls.add(new URL(rawAsset, baseUrl).href);
+            }
+
+            while ((match = componentRegex.exec(text)) !== null) {
+                const rawComp = match[1].trim();
+                urls.add(new URL(rawComp, baseUrl).href);
+            }
+
+            return urls;
+        }
+
+        async function discoverResources() {
+            const pages = [
+                'pages/app_intro.html',
+                'pages/app_principal.html'
+            ];
+
+            const resources = new Set([
+                new URL('assets/favicon/favicon.ico', location.href).href,
+                new URL('components/loader.js', location.href).href
+            ]);
+
+            for (const pagePath of pages) {
+                const pageUrl = new URL(pagePath, location.href);
+                resources.add(pageUrl.href);
+
+                const response = await fetch(pageUrl.href, { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error('No se pudo leer ' + pagePath + ' (' + response.status + ')');
+                }
+
+                const text = await response.text();
+                const found = extractResourceUrls(text, pageUrl.href);
+                for (const url of found) {
+                    resources.add(url);
+                }
+            }
+
+            const sameOriginResources = [];
+            for (const url of resources) {
+                try {
+                    const parsed = new URL(url);
+                    if (parsed.origin === location.origin) {
+                        sameOriginResources.push(parsed.href);
+                    }
+                } catch (e) {
+                    console.warn('URL ignorada:', url, e);
+                }
+            }
+
+            return sameOriginResources;
+        }
+
+        async function preloadResource(url) {
+            const parsed = new URL(url);
+            const pathname = parsed.pathname.toLowerCase();
+
+            if (pathname.endsWith('.mp4') || pathname.endsWith('.webm') || pathname.endsWith('.ogg')) {
+                return new Promise((resolve) => {
+                    const video = document.createElement('video');
+                    video.preload = 'auto';
+                    video.muted = true;
+
+                    const finish = () => resolve();
+                    video.addEventListener('loadeddata', finish, { once: true });
+                    video.addEventListener('canplay', finish, { once: true });
+                    video.addEventListener('error', finish, { once: true });
+
+                    video.src = url;
+                    video.load();
+                });
+            }
+
+            if (pathname.endsWith('.png') || pathname.endsWith('.jpg') || pathname.endsWith('.jpeg') || pathname.endsWith('.gif') || pathname.endsWith('.webp') || pathname.endsWith('.ico')) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => resolve();
+                    img.onerror = () => resolve();
+                    img.src = url;
+                });
+            }
+
+            await fetch(url, { cache: 'no-store' });
+        }
+
+        async function preloadAllResources(resourceUrls) {
+            let done = 0;
+            const total = resourceUrls.length;
+            updateProgress(0, total, 'Descargando recursos...');
+
+            await Promise.all(resourceUrls.map(async (url) => {
+                try {
+                    await preloadResource(url);
+                } catch (error) {
+                    console.warn('Error de precarga:', url, error);
+                } finally {
+                    done += 1;
+                    updateProgress(done, total, 'Descargando recursos...');
+                }
+            }));
+        }
+
+        async function boot() {
+            try {
+                updateProgress(0, 1, 'Analizando app_intro y app_principal...');
+                const resources = await discoverResources();
+                await preloadAllResources(resources);
+                updateProgress(resources.length, resources.length, 'Todo listo. Abriendo intro...');
+                statusText.classList.add('ok');
+
+                setTimeout(() => {
+                    window.location.replace('pages/app_intro.html');
+                }, 350);
+            } catch (error) {
+                statusText.classList.add('error');
+                statusText.textContent = 'Error de carga. Abriendo intro con carga bajo demanda...';
+                console.error(error);
+                setTimeout(() => {
+                    window.location.replace('pages/app_intro.html');
+                }, 800);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', boot);
     </script>
 </body>
 </html>

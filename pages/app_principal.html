@@ -527,7 +527,6 @@
 </head>
 <body>
     <div class="container">
-        <div data-component="loader"></div>
         <div data-component="controls"></div>
         <div data-component="media-shell"></div>
         <div data-component="confirm-dialog"></div>
@@ -541,7 +540,6 @@
     <script>
         window.addEventListener('DOMContentLoaded', async () => {
             await loadComponents({
-                '[data-component="loader"]': '../components/app-loader.html',
                 '[data-component="controls"]': '../components/app-controls.html',
                 '[data-component="media-shell"]': '../components/app-media-shell.html',
                 '[data-component="confirm-dialog"]': '../components/app-confirm-dialog.html',
@@ -688,21 +686,7 @@
         const order = shuffleArray(Object.keys(customsData).map(Number));
         const wrapper = document.getElementById('slides-wrapper');
 
-        let totalMediaToLoad = 0;
-        let mediaLoadedCount = 0;
-        let isAppReady = false; 
-        const loaderTextEl = document.querySelector('.arcade-loader-text');
-
         function forceStartApp() {
-            if (isAppReady) return;
-            isAppReady = true;
-
-            console.log("Iniciando aplicación. Recursos listos.");
-
-            const loader = document.getElementById('arcade-loader');
-            loader.style.opacity = '0';
-            loader.style.visibility = 'hidden';
-
             const mainSwiper = document.getElementById('main-swiper');
             mainSwiper.style.display = 'block';
             setTimeout(() => {
@@ -724,35 +708,9 @@
             swiper.loopCreate();
             swiper.update();
         }
-
-        function checkAllMediaLoaded() {
-            if (isAppReady) return;
-            mediaLoadedCount++;
-            if (loaderTextEl) {
-                loaderTextEl.textContent = `CARGANDO... ${mediaLoadedCount}/${totalMediaToLoad}`;
-            }
-            if (mediaLoadedCount >= totalMediaToLoad) {
-                forceStartApp();
-            }
-        }
-
-        // Fusible de seguridad: si por lo que sea algún recurso no llega a
-        // disparar su evento de carga (fallo de red, formato no soportado, etc.),
-        // esto evita que el loader se quede colgado para siempre. Debe ser
-        // generoso: con decenas de fotos y vídeos cargando a la vez, esperar
-        // más de 4 segundos es completamente normal, así que un fusible corto
-        // saltaba casi siempre ANTES de que los recursos reales terminasen
-        // de cargar, mostrando la app con vídeos/fotos a medias.
-        setTimeout(() => {
-            if (!isAppReady) {
-                console.warn("Fusible de carga activado (Timeout). Iniciando aplicación de forma forzada.");
-                forceStartApp();
-            }
-        }, 60000); 
     
         // Construye el nodo DOM de una slide a partir de su id.
-        // trackLoad=true sólo se usa en la carga inicial, para saber cuándo ocultar el loader.
-        function buildSlideNode(id, { trackLoad = false } = {}) {
+        function buildSlideNode(id) {
             const data = customsData[id];
 
             const slide = document.createElement('div');
@@ -761,8 +719,6 @@
 
             const file = data.file || `custom${id}.png`;
             const isVideo = file && file.endsWith('.mp4');
-
-            if (trackLoad) totalMediaToLoad++;
 
             const mediaHTML = isVideo
                 ? `<video class="custom-media" autoplay muted loop playsinline src="../assets/customs/${file}"></video>`
@@ -779,36 +735,12 @@
                 </div>
             `;
 
-            if (trackLoad) {
-                const mediaEl = slide.querySelector(isVideo ? 'video.custom-media' : 'img');
-                if (mediaEl) {
-                    const handleMediaLoad = () => {
-                        if (mediaEl.dataset.loaded === 'true') return;
-                        mediaEl.dataset.loaded = 'true';
-                        checkAllMediaLoaded();
-                    };
-
-                    mediaEl.addEventListener('load', handleMediaLoad);
-                    mediaEl.addEventListener('error', handleMediaLoad);
-                    mediaEl.addEventListener('loadeddata', handleMediaLoad);
-                    mediaEl.addEventListener('canplay', handleMediaLoad);
-
-                    if (isVideo) {
-                        if (mediaEl.readyState >= 2) {
-                            handleMediaLoad();
-                        }
-                    } else if (mediaEl.complete) {
-                        handleMediaLoad();
-                    }
-                }
-            }
-
             return slide;
         }
 
         order.forEach((id) => {
             if (!customsData[id]) return;
-            wrapper.appendChild(buildSlideNode(id, { trackLoad: true }));
+            wrapper.appendChild(buildSlideNode(id));
         });
     
         const swiper = new Swiper('.swiper', {
@@ -818,6 +750,8 @@
             loop: true,                 
             grabCursor: true,           
         });
+
+        forceStartApp();
 
         // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
         let currentSwiperIds = order;
