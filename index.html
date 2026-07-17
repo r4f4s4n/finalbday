@@ -55,7 +55,7 @@
             border: 6px solid var(--frame);
             background: rgba(0, 0, 0, 0.75);
             box-shadow: 10px 10px 0 #000;
-            padding: 28px;
+            padding: 20px;
         }
 
         h1 {
@@ -297,7 +297,17 @@
             const percent = Math.min(100, Math.round((done / safeTotal) * 100));
             progressFill.style.width = percent + '%';
             progressText.textContent = percent + '%';
-            progressCount.textContent = done + ' / ' + total;
+            if (done < 0) {
+                done = 0;
+            } else if (done > 100) {
+                done = 100;
+            }
+            if (total < 0) {
+                total = 0;
+            } else if (total > 100) {
+                total = 100;
+            }
+            progressCount.textContent = done - 17 + ' / ' + total - 17;
             if (statusMessage) {
                 statusText.textContent = statusMessage;
             }
@@ -528,6 +538,11 @@
                         } else if (done > 120) {
                             done = 120;
                         }
+                        if (total < 0) {
+                            total = 0;
+                        } else if (total > 120) {
+                            total = 120;
+                    }
                         updateProgress(done, total, 'Disfrazando al personal...');
                     }
                 }
