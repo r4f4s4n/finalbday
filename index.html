@@ -257,12 +257,7 @@
 
         let principalInitPromise = null;
         let principalAppReady = false;
-        let pendingPrincipalTransition = false;
         let appReady = false;
-        let introBirdsStarted = false;
-        let introBirdsReady = false;
-        let introBirdsBlobUrl = null;
-        let introBirdsRetryIntervalId = null;
         let startMusicTimeoutId = null;
         let stopIntroBirdsTimeoutId = null;
         const PRELOAD_TIMEOUT_MS = 8000;
@@ -333,78 +328,12 @@
             });
         }
 
-        function startIntroBirdsMusic(options = {}) {
-            const { silentAutoplay = false } = options;
-            if (!introBgBirds || !introBirdsReady || introBirdsStarted) return;
+        function startIntroBirdsMusic() {
+            if (!introBgBirds) return;
             introBgBirds.loop = true;
             introBgBirds.volume = 1;
-            introBgBirds.muted = Boolean(silentAutoplay);
-            introBgBirds.play().then(() => {
-                introBirdsStarted = true;
-                if (silentAutoplay) {
-                    introBgBirds.muted = false;
-                    introBgBirds.volume = 1;
-                }
-                if (introBirdsRetryIntervalId !== null) {
-                    clearInterval(introBirdsRetryIntervalId);
-                    introBirdsRetryIntervalId = null;
-                }
-                document.removeEventListener('pointerdown', unlockIntroBirdsOnFirstInteraction);
-                document.removeEventListener('keydown', unlockIntroBirdsOnFirstInteraction);
-            }).catch(() => {
+            introBgBirds.play().catch(() => {
                 // Puede bloquearse hasta interacción del usuario.
-            });
-        }
-
-        function scheduleIntroBirdsAutoplayRetries() {
-            if (introBirdsRetryIntervalId !== null || introBirdsStarted) return;
-            introBirdsRetryIntervalId = setInterval(() => {
-                if (introBirdsStarted) {
-                    clearInterval(introBirdsRetryIntervalId);
-                    introBirdsRetryIntervalId = null;
-                    return;
-                }
-                startIntroBirdsMusic();
-            }, 700);
-        }
-
-        function unlockIntroBirdsOnFirstInteraction() {
-            if (introBirdsStarted) return;
-            startIntroBirdsMusic();
-        }
-
-        function waitForAudioAvailability(audioEl, timeoutMs = 5000) {
-            return new Promise((resolve) => {
-                if (!audioEl) {
-                    resolve(false);
-                    return;
-                }
-
-                if (audioEl.readyState >= 3) {
-                    resolve(true);
-                    return;
-                }
-
-                let settled = false;
-                const finish = (ok) => {
-                    if (settled) return;
-                    settled = true;
-                    clearTimeout(timeoutId);
-                    audioEl.removeEventListener('loadeddata', onReady);
-                    audioEl.removeEventListener('canplay', onReady);
-                    audioEl.removeEventListener('canplaythrough', onReady);
-                    audioEl.removeEventListener('error', onError);
-                    resolve(ok);
-                };
-
-                const onReady = () => finish(true);
-                const onError = () => finish(false);
-                const timeoutId = setTimeout(() => finish(audioEl.readyState >= 2), timeoutMs);
-
-                audioEl.addEventListener('loadeddata', onReady);
-                audioEl.addEventListener('canplay', onReady);
-                audioEl.addEventListener('canplaythrough', onReady);
-                audioEl.addEventListener('error', onError);
             });
         }
 
@@ -481,7 +410,6 @@
                 new URL('assets/videos/video_escritorio.mp4', location.href).href,
                 new URL('assets/videos/zoom_movil.mp4', location.href).href,
                 new URL('assets/videos/zoom_escritorio.mp4', location.href).href,
-                new URL('assets/videos/aves_16.mp3', location.href).href,
                 new URL('assets/videos/interior_student_cafe.mp3', location.href).href,
                 new URL('pages/app_principal.html', location.href).href
             ]);
@@ -528,7 +456,6 @@
         async function preloadResource(url) {
             const parsed = new URL(url);
             const pathname = parsed.pathname.toLowerCase();
-            const isIntroBirdsFile = pathname.endsWith('/assets/videos/aves_16.mp3') || pathname.endsWith('/assets/videos/aves-16.mp3');
 
             const withTimeout = (promise, timeoutMs = PRELOAD_TIMEOUT_MS) => {
                 return new Promise((resolve) => {
@@ -573,51 +500,6 @@
                     img.onload = () => resolve();
                     img.onerror = () => resolve();
                     img.src = url;
-                }));
-            }
-
-            if (pathname.endsWith('.mp3') || pathname.endsWith('.wav') || pathname.endsWith('.m4a')) {
-                return withTimeout(new Promise((resolve) => {
-                    if (isIntroBirdsFile && introBgBirds) {
-                        (async () => {
-                            try {
-                                const response = await fetch(url, { cache: 'no-store' });
-                                if (!response.ok) {
-                                    throw new Error('No se pudo cargar aves_16.mp3 (' + response.status + ')');
-                                }
-
-                                const blob = await response.blob();
-                                if (introBirdsBlobUrl) {
-                                    URL.revokeObjectURL(introBirdsBlobUrl);
-                                }
-                                introBirdsBlobUrl = URL.createObjectURL(blob);
-
-                                introBgBirds.src = introBirdsBlobUrl;
-                                introBgBirds.preload = 'auto';
-                                introBgBirds.load();
-
-                                const available = await waitForAudioAvailability(introBgBirds);
-                                introBirdsReady = available;
-                                if (introBirdsReady) {
-                                    startIntroBirdsMusic({ silentAutoplay: true });
-                                }
-                                scheduleIntroBirdsAutoplayRetries();
-                            } catch (error) {
-                                console.warn('No se pudo precargar aves_16.mp3:', error);
-                            } finally {
-                                resolve();
-                            }
-                        })();
-                        return;
-                    }
-
-                    const audio = document.createElement('audio');
-                    const finish = () => resolve();
-                    audio.preload = 'auto';
-                    audio.addEventListener('canplaythrough', finish, { once: true });
-                    audio.addEventListener('error', finish, { once: true });
-                    audio.src = url;
-                    audio.load();
                 }));
             }
 
@@ -722,10 +604,6 @@
                 const run = new Function(runnableScript);
                 await run();
                 principalAppReady = true;
-                if (pendingPrincipalTransition) {
-                    pendingPrincipalTransition = false;
-                    transitionToPrincipal();
-                }
             })();
 
             return principalInitPromise;
@@ -735,13 +613,11 @@
             loaderPage.classList.add('is-hidden');
             introView.classList.add('is-active');
             appReady = true;
+            startIntroBirdsMusic();
         }
 
         function transitionToPrincipal() {
-            if (!principalAppReady) {
-                pendingPrincipalTransition = true;
-                return;
-            }
+            if (!principalAppReady) return;
             principalView.classList.add('is-active');
             introView.classList.remove('is-active');
         }
@@ -757,34 +633,23 @@
                 startMusicTimeoutId = null;
             }, 5000);
 
+            startIntroBirdsMusic();
+
             introOverlay.style.display = 'none';
+            introBgVideo.style.display = 'none';
             introTransitionVideo.style.display = 'block';
             introTransitionVideo.muted = true;
             introTransitionVideo.volume = 0;
-            introTransitionVideo.currentTime = 0;
-
-            const safeGoPrincipal = () => {
-                transitionToPrincipal();
-            };
-
-            introTransitionVideo.addEventListener('ended', safeGoPrincipal, { once: true });
-
-            introTransitionVideo.play().then(() => {
-                introBgVideo.style.display = 'none';
-            }).catch(() => {
-                // Si falla la reproducción del video de transición, no dejamos pantalla negra.
-                safeGoPrincipal();
-            });
+            introTransitionVideo.play().catch(() => {});
 
             setTimeout(() => {
-                safeGoPrincipal();
-            }, 7000);
+                transitionToPrincipal();
+            }, 6500);
         }
 
         async function boot() {
             try {
-                document.addEventListener('pointerdown', unlockIntroBirdsOnFirstInteraction);
-                document.addEventListener('keydown', unlockIntroBirdsOnFirstInteraction);
+                startIntroBirdsMusic();
                 updateProgress(0, 1, 'Analizando recursos de intro y principal...');
                 const resources = await discoverResources();
 
