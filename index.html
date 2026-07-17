@@ -257,6 +257,7 @@
 
         let principalInitPromise = null;
         let principalAppReady = false;
+        let pendingPrincipalTransition = false;
         let appReady = false;
         let introBirdsStarted = false;
         let introBirdsReady = false;
@@ -332,12 +333,18 @@
             });
         }
 
-        function startIntroBirdsMusic() {
+        function startIntroBirdsMusic(options = {}) {
+            const { silentAutoplay = false } = options;
             if (!introBgBirds || !introBirdsReady || introBirdsStarted) return;
             introBgBirds.loop = true;
             introBgBirds.volume = 1;
+            introBgBirds.muted = Boolean(silentAutoplay);
             introBgBirds.play().then(() => {
                 introBirdsStarted = true;
+                if (silentAutoplay) {
+                    introBgBirds.muted = false;
+                    introBgBirds.volume = 1;
+                }
                 if (introBirdsRetryIntervalId !== null) {
                     clearInterval(introBirdsRetryIntervalId);
                     introBirdsRetryIntervalId = null;
@@ -364,6 +371,41 @@
         function unlockIntroBirdsOnFirstInteraction() {
             if (introBirdsStarted) return;
             startIntroBirdsMusic();
+        }
+
+        function waitForAudioAvailability(audioEl, timeoutMs = 5000) {
+            return new Promise((resolve) => {
+                if (!audioEl) {
+                    resolve(false);
+                    return;
+                }
+
+                if (audioEl.readyState >= 3) {
+                    resolve(true);
+                    return;
+                }
+
+                let settled = false;
+                const finish = (ok) => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timeoutId);
+                    audioEl.removeEventListener('loadeddata', onReady);
+                    audioEl.removeEventListener('canplay', onReady);
+                    audioEl.removeEventListener('canplaythrough', onReady);
+                    audioEl.removeEventListener('error', onError);
+                    resolve(ok);
+                };
+
+                const onReady = () => finish(true);
+                const onError = () => finish(false);
+                const timeoutId = setTimeout(() => finish(audioEl.readyState >= 2), timeoutMs);
+
+                audioEl.addEventListener('loadeddata', onReady);
+                audioEl.addEventListener('canplay', onReady);
+                audioEl.addEventListener('canplaythrough', onReady);
+                audioEl.addEventListener('error', onError);
+            });
         }
 
         function isValidResourcePath(path) {
@@ -554,8 +596,11 @@
                                 introBgBirds.preload = 'auto';
                                 introBgBirds.load();
 
-                                introBirdsReady = true;
-                                startIntroBirdsMusic();
+                                const available = await waitForAudioAvailability(introBgBirds);
+                                introBirdsReady = available;
+                                if (introBirdsReady) {
+                                    startIntroBirdsMusic({ silentAutoplay: true });
+                                }
                                 scheduleIntroBirdsAutoplayRetries();
                             } catch (error) {
                                 console.warn('No se pudo precargar aves_16.mp3:', error);
@@ -677,6 +722,10 @@
                 const run = new Function(runnableScript);
                 await run();
                 principalAppReady = true;
+                if (pendingPrincipalTransition) {
+                    pendingPrincipalTransition = false;
+                    transitionToPrincipal();
+                }
             })();
 
             return principalInitPromise;
@@ -689,7 +738,10 @@
         }
 
         function transitionToPrincipal() {
-            if (!principalAppReady) return;
+            if (!principalAppReady) {
+                pendingPrincipalTransition = true;
+                return;
+            }
             principalView.classList.add('is-active');
             introView.classList.remove('is-active');
         }
@@ -706,15 +758,27 @@
             }, 5000);
 
             introOverlay.style.display = 'none';
-            introBgVideo.style.display = 'none';
             introTransitionVideo.style.display = 'block';
             introTransitionVideo.muted = true;
             introTransitionVideo.volume = 0;
-            introTransitionVideo.play().catch(() => {});
+            introTransitionVideo.currentTime = 0;
+
+            const safeGoPrincipal = () => {
+                transitionToPrincipal();
+            };
+
+            introTransitionVideo.addEventListener('ended', safeGoPrincipal, { once: true });
+
+            introTransitionVideo.play().then(() => {
+                introBgVideo.style.display = 'none';
+            }).catch(() => {
+                // Si falla la reproducción del video de transición, no dejamos pantalla negra.
+                safeGoPrincipal();
+            });
 
             setTimeout(() => {
-                transitionToPrincipal();
-            }, 6500);
+                safeGoPrincipal();
+            }, 7000);
         }
 
         async function boot() {
