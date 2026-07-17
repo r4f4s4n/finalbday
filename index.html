@@ -259,6 +259,7 @@
         let principalAppReady = false;
         let appReady = false;
         let introBirdsStarted = false;
+        let introBirdsReady = false;
         let startMusicTimeoutId = null;
         let stopIntroBirdsTimeoutId = null;
         const PRELOAD_TIMEOUT_MS = 8000;
@@ -330,7 +331,7 @@
         }
 
         function startIntroBirdsMusic() {
-            if (!introBgBirds) return;
+            if (!introBgBirds || !introBirdsReady) return;
             introBgBirds.loop = true;
             introBgBirds.volume = 1;
             introBgBirds.play().then(() => {
@@ -464,6 +465,7 @@
         async function preloadResource(url) {
             const parsed = new URL(url);
             const pathname = parsed.pathname.toLowerCase();
+            const isIntroBirdsFile = pathname.endsWith('/assets/videos/aves_16.mp3') || pathname.endsWith('/assets/videos/aves-16.mp3');
 
             const withTimeout = (promise, timeoutMs = PRELOAD_TIMEOUT_MS) => {
                 return new Promise((resolve) => {
@@ -508,6 +510,32 @@
                     img.onload = () => resolve();
                     img.onerror = () => resolve();
                     img.src = url;
+                }));
+            }
+
+            if (pathname.endsWith('.mp3') || pathname.endsWith('.wav') || pathname.endsWith('.m4a')) {
+                return withTimeout(new Promise((resolve) => {
+                    if (isIntroBirdsFile && introBgBirds) {
+                        const finish = () => {
+                            introBirdsReady = true;
+                            startIntroBirdsMusic();
+                            resolve();
+                        };
+
+                        introBgBirds.preload = 'auto';
+                        introBgBirds.addEventListener('canplaythrough', finish, { once: true });
+                        introBgBirds.addEventListener('error', finish, { once: true });
+                        introBgBirds.load();
+                        return;
+                    }
+
+                    const audio = document.createElement('audio');
+                    const finish = () => resolve();
+                    audio.preload = 'auto';
+                    audio.addEventListener('canplaythrough', finish, { once: true });
+                    audio.addEventListener('error', finish, { once: true });
+                    audio.src = url;
+                    audio.load();
                 }));
             }
 
@@ -621,7 +649,6 @@
             loaderPage.classList.add('is-hidden');
             introView.classList.add('is-active');
             appReady = true;
-            startIntroBirdsMusic();
         }
 
         function transitionToPrincipal() {
@@ -641,8 +668,6 @@
                 startMusicTimeoutId = null;
             }, 5000);
 
-            startIntroBirdsMusic();
-
             introOverlay.style.display = 'none';
             introBgVideo.style.display = 'none';
             introTransitionVideo.style.display = 'block';
@@ -659,7 +684,6 @@
             try {
                 document.addEventListener('pointerdown', unlockIntroBirdsOnFirstInteraction, { once: true });
                 document.addEventListener('keydown', unlockIntroBirdsOnFirstInteraction, { once: true });
-                startIntroBirdsMusic();
                 updateProgress(0, 1, 'Analizando recursos de intro y principal...');
                 const resources = await discoverResources();
 
