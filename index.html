@@ -293,21 +293,14 @@
         window.loadComponents = loadComponents;
 
         function updateProgress(done, total, statusMessage) {
+            const safeDone = Math.max(0, done);
             const safeTotal = total > 0 ? total : 1;
-            const percent = Math.min(100, Math.round((done / safeTotal) * 100));
+            const percent = Math.max(0, Math.min(100, Math.round((safeDone / safeTotal) * 100)));
             progressFill.style.width = percent + '%';
             progressText.textContent = percent + '%';
-            if (done < 0) {
-                done = 0;
-            } else if (done > 100) {
-                done = 100;
-            }
-            if (total < 0) {
-                total = 0;
-            } else if (total > 100) {
-                total = 100;
-            }
-            progressCount.textContent = done - 17 + ' / ' + total - 17;
+            const visibleDone = Math.max(0, Math.min(121, done - 17));
+            const visibleTotal = Math.max(0, Math.min(121, total - 17));
+            progressCount.textContent = visibleDone + ' / ' + visibleTotal;
             if (statusMessage) {
                 statusText.textContent = statusMessage;
             }
@@ -514,8 +507,8 @@
         }
 
         async function preloadAllResources(resourceUrls) {
-            let done = 0 - 17;
-            const total = resourceUrls.length - 17;
+            let done = 0;
+            const total = resourceUrls.length;
             updateProgress(0, total, 'Disfrazando al personal...');
 
             const maxConcurrent = 10;
@@ -533,16 +526,6 @@
                         console.warn('Error de precarga:', url, error);
                     } finally {
                         done += 1;
-                        if (done < 0) {
-                            done = 0;
-                        } else if (done > 120) {
-                            done = 120;
-                        }
-                        if (total < 0) {
-                            total = 0;
-                        } else if (total > 120) {
-                            total = 120;
-                    }
                         updateProgress(done, total, 'Disfrazando al personal...');
                     }
                 }
@@ -666,6 +649,7 @@
 
         async function boot() {
             try {
+                startIntroBirdsMusic();
                 updateProgress(0, 1, 'Analizando recursos de intro y principal...');
                 const resources = await discoverResources();
 
