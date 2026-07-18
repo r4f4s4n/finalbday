@@ -69,36 +69,15 @@
         <source src="../assets/videos/interior_student_cafe.mp3" type="audio/mpeg">
     </audio>
 
+    <script src="../assets/js/intro-audio.js"></script>
     <script>
         const introBgBirds = document.getElementById('intro-bg-birds');
         const globalBgMusic = document.getElementById('global-bg-music');
-        let stopIntroBirdsTimeoutId = null;
-
-        function startIntroBirdsMusic() {
-            if (!introBgBirds) return;
-            introBgBirds.loop = true;
-            introBgBirds.volume = 1;
-            introBgBirds.play().catch(() => {
-                // Puede bloquearse hasta interacción del usuario.
-            });
-        }
-
-        function startGlobalBackgroundMusic() {
-            if (!globalBgMusic) return;
-            globalBgMusic.loop = true;
-            globalBgMusic.volume = 1;
-            globalBgMusic.play().then(() => {
-                if (!introBgBirds) return;
-                if (stopIntroBirdsTimeoutId !== null) {
-                    clearTimeout(stopIntroBirdsTimeoutId);
-                }
-                stopIntroBirdsTimeoutId = setTimeout(() => {
-                    introBgBirds.pause();
-                    introBgBirds.currentTime = 0;
-                    stopIntroBirdsTimeoutId = null;
-                }, 1000);
-            }).catch(() => {});
-        }
+        const introAudio = window.FinalBdayIntroAudio.createController({
+            introBirdsEl: introBgBirds,
+            globalMusicEl: globalBgMusic,
+            stopIntroDelayMs: 1000
+        });
 
         function abrirPrincipalConCrossfade() {
             sessionStorage.setItem('fb-crossfade-to-principal', '1');
@@ -110,7 +89,7 @@
 
         function iniciarTransicion() {
             document.getElementById('overlay').style.display = 'none';
-            setTimeout(startGlobalBackgroundMusic, 5000);
+            setTimeout(() => introAudio.startGlobalBackgroundMusic(), 5000);
 
             document.getElementById('bg-video').style.display = 'none';
             const transVideo = document.getElementById('transition-video');
@@ -122,7 +101,7 @@
             }, 7000);
         }
 
-        window.addEventListener('DOMContentLoaded', startIntroBirdsMusic);
+        window.addEventListener('DOMContentLoaded', () => introAudio.startIntroBirdsMusic());
     </script>
 </body>
 </html>
