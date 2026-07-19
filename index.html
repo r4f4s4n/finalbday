@@ -240,12 +240,6 @@
     </audio>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="components/loader.js"></script>
-    <script src="assets/js/intro-audio.js"></script>
-    <script src="assets/js/principal-back-guard.js"></script>
-    <script src="assets/js/principal-customs-data.js"></script>
-    <script src="assets/js/principal-bg-video.js"></script>
-    <script src="assets/js/principal-app.js"></script>
     <script>
         const progressFill = document.getElementById('progress-fill');
         const progressText = document.getElementById('progress-text');
@@ -261,23 +255,42 @@
         const introBgBirds = document.getElementById('intro-bg-birds');
         const btnStart = document.getElementById('btn-start');
 
-        window.__FB_LOADER_OPTIONS = {
-            stripParentPrefix: true,
-            replaceAssetParentPrefix: true
-        };
-
-        const introAudio = window.FinalBdayIntroAudio.createController({
-            introBirdsEl: introBgBirds,
-            globalMusicEl: globalBgMusic,
-            stopIntroDelayMs: 1000
-        });
-
         let principalInitPromise = null;
         let principalAppReady = false;
         let appReady = false;
         let startMusicTimeoutId = null;
+        let stopIntroBirdsTimeoutId = null;
         const PRELOAD_TIMEOUT_MS = 8000;
-        const POST_LOAD_WAIT_MS = 10000;
+
+        function normalizeComponentMarkup(markup) {
+            return markup.replace(/\.\.\/assets\//g, 'assets/');
+        }
+
+        function normalizeFetchPath(path) {
+            if (path.startsWith('../')) return path.slice(3);
+            return path;
+        }
+
+        async function loadComponentInto(selector, url) {
+            const container = document.querySelector(selector);
+            if (!container) return;
+
+            const normalizedUrl = normalizeFetchPath(url);
+            const response = await fetch(normalizedUrl, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error('No se pudo cargar ' + normalizedUrl + ': ' + response.status);
+            }
+
+            const rawMarkup = await response.text();
+            container.innerHTML = normalizeComponentMarkup(rawMarkup);
+        }
+
+        async function loadComponents(components) {
+            const entries = Object.entries(components);
+            await Promise.all(entries.map(([selector, url]) => loadComponentInto(selector, url)));
+        }
+
+        window.loadComponents = loadComponents;
 
         function updateProgress(done, total, statusMessage) {
             const safeDone = Math.max(0, done);
@@ -285,8 +298,8 @@
             const percent = Math.max(0, Math.min(100, Math.round((safeDone / safeTotal) * 100)));
             progressFill.style.width = percent + '%';
             progressText.textContent = percent + '%';
-            const visibleDone = Math.max(0, Math.min(safeTotal, safeDone));
-            const visibleTotal = safeTotal;
+            const visibleDone = Math.max(0, Math.min(121, done - 17));
+            const visibleTotal = Math.max(0, Math.min(121, total - 17));
             progressCount.textContent = visibleDone + ' / ' + visibleTotal;
             if (statusMessage) {
                 statusText.textContent = statusMessage;
@@ -295,35 +308,32 @@
             progressbar.setAttribute('aria-valuenow', String(percent));
         }
 
-        function getCustomsTotal() {
-            if (!window.FinalBdayCustomsData || typeof window.FinalBdayCustomsData.getData !== 'function') {
-                return 121;
-            }
-
-            const customsData = window.FinalBdayCustomsData.getData();
-            return Object.keys(customsData).length;
+        function startGlobalBackgroundMusic() {
+            if (!globalBgMusic) return;
+            globalBgMusic.loop = true;
+            globalBgMusic.volume = 1;
+            globalBgMusic.play().then(() => {
+                if (!introBgBirds) return;
+                if (stopIntroBirdsTimeoutId !== null) {
+                    clearTimeout(stopIntroBirdsTimeoutId);
+                }
+                stopIntroBirdsTimeoutId = setTimeout(() => {
+                    introBgBirds.pause();
+                    introBgBirds.currentTime = 0;
+                    stopIntroBirdsTimeoutId = null;
+                }, 1000);
+            }).catch(() => {
+                // Si el navegador bloquea la reproducción automática, se
+                // volverá a intentar tras la interacción del usuario.
+            });
         }
 
-        function runSimulatedCounter(totalCustoms, durationMs) {
-            return new Promise((resolve) => {
-                const startTime = performance.now();
-
-                function tick(now) {
-                    const elapsed = now - startTime;
-                    const ratio = Math.max(0, Math.min(1, elapsed / durationMs));
-                    const simulatedDone = Math.round(totalCustoms * ratio);
-
-                    updateProgress(simulatedDone, totalCustoms, 'Calentando motores...');
-
-                    if (ratio < 1) {
-                        requestAnimationFrame(tick);
-                        return;
-                    }
-
-                    resolve();
-                }
-
-                requestAnimationFrame(tick);
+        function startIntroBirdsMusic() {
+            if (!introBgBirds) return;
+            introBgBirds.loop = true;
+            introBgBirds.volume = 1;
+            introBgBirds.play().catch(() => {
+                // Puede bloquearse hasta interacción del usuario.
             });
         }
 
@@ -498,6 +508,8 @@
 
         async function preloadAllResources(resourceUrls) {
             let done = 0;
+            const total = resourceUrls.length;
+            updateProgress(0, total, 'Disfrazando al personal...');
 
             const maxConcurrent = 10;
             let index = 0;
@@ -514,6 +526,7 @@
                         console.warn('Error de precarga:', url, error);
                     } finally {
                         done += 1;
+                        updateProgress(done, total, 'Disfrazando al personal...');
                     }
                 }
             }
@@ -531,6 +544,36 @@
             const styleMatch = pageHtml.match(/<style>([\s\S]*?)<\/style>/i);
             if (!styleMatch) return '';
             return styleMatch[1];
+        }
+
+        function extractPrincipalInlineScript(pageHtml) {
+            const scriptMatches = pageHtml.match(/<script>([\s\S]*?)<\/script>/gi) || [];
+            for (let i = scriptMatches.length - 1; i >= 0; i--) {
+                const content = scriptMatches[i]
+                    .replace(/^<script>/i, '')
+                    .replace(/<\/script>$/i, '');
+                if (content.indexOf('customsData') !== -1) {
+                    return content;
+                }
+            }
+            return '';
+        }
+
+        function transformPrincipalScript(script) {
+            let transformed = script;
+
+            transformed = transformed.replace(/\.\.\/assets\//g, 'assets/');
+            transformed = transformed.replace(
+                /window\.addEventListener\('DOMContentLoaded',\s*async\s*\(\)\s*=>\s*\{/,
+                'return (async () => {'
+            );
+
+            const lastClose = transformed.lastIndexOf('});');
+            if (lastClose !== -1) {
+                transformed = transformed.slice(0, lastClose) + '})();' + transformed.slice(lastClose + 3);
+            }
+
+            return transformed;
         }
 
         async function initPrincipalApp() {
@@ -551,11 +594,15 @@
                     document.head.appendChild(styleTag);
                 }
 
-                if (!window.FinalBdayPrincipalApp || typeof window.FinalBdayPrincipalApp.init !== 'function') {
-                    throw new Error('No se pudo inicializar assets/js/principal-app.js');
+                const principalScript = extractPrincipalInlineScript(pageHtml);
+                if (!principalScript) {
+                    throw new Error('No se pudo extraer el script principal de la app.');
                 }
 
-                await window.FinalBdayPrincipalApp.init();
+                const runnableScript = transformPrincipalScript(principalScript);
+                // eslint-disable-next-line no-new-func
+                const run = new Function(runnableScript);
+                await run();
                 principalAppReady = true;
             })();
 
@@ -566,7 +613,7 @@
             loaderPage.classList.add('is-hidden');
             introView.classList.add('is-active');
             appReady = true;
-            introAudio.startIntroBirdsMusic();
+            startIntroBirdsMusic();
         }
 
         function transitionToPrincipal() {
@@ -582,11 +629,11 @@
                 clearTimeout(startMusicTimeoutId);
             }
             startMusicTimeoutId = setTimeout(() => {
-                introAudio.startGlobalBackgroundMusic();
+                startGlobalBackgroundMusic();
                 startMusicTimeoutId = null;
             }, 5000);
 
-            introAudio.startIntroBirdsMusic();
+            startIntroBirdsMusic();
 
             introOverlay.style.display = 'none';
             introBgVideo.style.display = 'none';
@@ -602,9 +649,8 @@
 
         async function boot() {
             try {
-                introAudio.startIntroBirdsMusic();
-                const totalCustoms = getCustomsTotal();
-                updateProgress(0, totalCustoms, 'Analizando recursos de intro y principal...');
+                startIntroBirdsMusic();
+                updateProgress(0, 1, 'Analizando recursos de intro y principal...');
                 const resources = await discoverResources();
 
                 await Promise.all([
@@ -612,10 +658,7 @@
                     initPrincipalApp()
                 ]);
 
-                updateProgress(0, totalCustoms, 'Carga real completada. Preparando entrada...');
-                await runSimulatedCounter(totalCustoms, POST_LOAD_WAIT_MS);
-
-                updateProgress(totalCustoms, totalCustoms, 'Todo listo. Entrando en intro...');
+                updateProgress(resources.length, resources.length, 'Todo listo. Entrando en intro...');
                 setTimeout(enterIntro, 250);
             } catch (error) {
                 statusText.classList.add('error');
