@@ -51,7 +51,7 @@
 
         function startIntroBirdsMusic(attempt) {
             if (!introBirdsEl) return;
-            if (introBirdsStarted) return;
+            if (introBirdsStarted && !introBirdsEl.paused) return;
 
             const currentAttempt = Number.isFinite(attempt) ? attempt : 0;
             introBirdsEl.loop = true;

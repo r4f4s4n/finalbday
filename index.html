@@ -181,6 +181,46 @@
             position: relative;
             background: #000;
         }
+
+        .audio-status-indicator {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            width: 42px;
+            height: 42px;
+            z-index: 250;
+            user-select: none;
+            filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
+            border: 3px solid rgba(255, 255, 255, 0.18);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.55);
+            padding: 4px;
+            cursor: pointer;
+            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+            box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+        }
+
+        .audio-status-indicator:hover,
+        .audio-status-indicator:focus-visible {
+            transform: scale(1.08);
+            border-color: rgba(255, 204, 0, 0.92);
+            background: rgba(20, 20, 20, 0.8);
+            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.18);
+            outline: none;
+        }
+
+        .audio-status-indicator:active {
+            transform: scale(1.02);
+            border-color: rgba(255, 255, 255, 0.92);
+        }
+
+        .audio-status-indicator img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
     </style>
 </head>
 <body>
@@ -239,6 +279,10 @@
         <source data-asset-original-src="assets/videos/aves_16.mp3" type="audio/mpeg">
     </audio>
 
+    <button class="audio-status-indicator" id="audio-status-button" type="button" aria-label="Activar sonido" aria-pressed="false">
+        <img id="audio-status-icon" src="assets/favicon/vol-mute.png" alt="">
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="components/loader.js"></script>
     <script src="assets/js/intro-audio.js"></script>
@@ -259,7 +303,74 @@
         const introTransitionVideo = document.getElementById('intro-transition-video');
         const globalBgMusic = document.getElementById('global-bg-music');
         const introBgBirds = document.getElementById('intro-bg-birds');
+        const audioStatusButton = document.getElementById('audio-status-button');
+        const audioStatusIcon = document.getElementById('audio-status-icon');
         const btnStart = document.getElementById('btn-start');
+
+        const AUDIO_ICON_MUTE = 'assets/favicon/vol-mute.png';
+        const AUDIO_ICON_PLAY = 'assets/favicon/vol-play.png';
+        let audioMutedByUser = false;
+
+        function isAudioElementPlaying(audioEl) {
+            return !!audioEl && !audioEl.paused && !audioEl.ended && audioEl.readyState > 1;
+        }
+
+        function updateAudioStatusIcon() {
+            if (!audioStatusIcon) return;
+
+            const isAnyAudioPlaying = !audioMutedByUser && (
+                isAudioElementPlaying(introBgBirds) || isAudioElementPlaying(globalBgMusic)
+            );
+            const nextIcon = isAnyAudioPlaying ? AUDIO_ICON_PLAY : AUDIO_ICON_MUTE;
+
+            if (audioStatusIcon.getAttribute('src') !== nextIcon) {
+                audioStatusIcon.setAttribute('src', nextIcon);
+            }
+
+            if (audioStatusButton) {
+                audioStatusButton.setAttribute('aria-label', isAnyAudioPlaying ? 'Silenciar sonido' : 'Activar sonido');
+                audioStatusButton.setAttribute('aria-pressed', isAnyAudioPlaying ? 'true' : 'false');
+            }
+        }
+
+        function setAudioMutedState(shouldMute) {
+            audioMutedByUser = shouldMute;
+            introBgBirds.muted = shouldMute;
+            globalBgMusic.muted = shouldMute;
+
+            if (shouldMute) {
+                introBgBirds.pause();
+                globalBgMusic.pause();
+                updateAudioStatusIcon();
+                return;
+            }
+
+            if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {
+                introAudio.startGlobalBackgroundMusic();
+            } else {
+                introAudio.startIntroBirdsMusic();
+            }
+
+            updateAudioStatusIcon();
+        }
+
+        [introBgBirds, globalBgMusic].forEach((audioEl) => {
+            if (!audioEl) return;
+            audioEl.addEventListener('play', updateAudioStatusIcon);
+            audioEl.addEventListener('playing', updateAudioStatusIcon);
+            audioEl.addEventListener('pause', updateAudioStatusIcon);
+            audioEl.addEventListener('ended', updateAudioStatusIcon);
+            audioEl.addEventListener('emptied', updateAudioStatusIcon);
+            audioEl.addEventListener('waiting', updateAudioStatusIcon);
+        });
+
+        if (audioStatusButton) {
+            audioStatusButton.addEventListener('click', () => {
+                setAudioMutedState(!audioMutedByUser);
+            });
+        }
+
+        updateAudioStatusIcon();
 
         window.__FB_LOADER_OPTIONS = {
             stripParentPrefix: true,
@@ -899,7 +1010,7 @@
                     simulationLockedToReal = true;
                 }
 
-                updateProgress(getShownCustoms(), totalCustoms, 'Invitados disfrazándose...');
+                updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
 
                 simulationTimerId = setInterval(() => {
                     if (simulationLockedToReal) return;
@@ -911,7 +1022,7 @@
                         stopSimulation();
                     }
 
-                    updateProgress(getShownCustoms(), totalCustoms, 'Invitados disfrazándose...');
+                    updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
                 }, 2000);
 
                 await preloadAppResources({
@@ -922,7 +1033,7 @@
                             stopSimulation();
                         }
 
-                        updateProgress(getShownCustoms(), totalCustoms, 'Cargando customs...');
+                        updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
                     }
                 });
 
