@@ -71,6 +71,16 @@ const order = isFirstPrincipalVisit
     ? moveIdToFront(shuffledOrder, startCustomId)
     : shuffledOrder;
 const wrapper = document.getElementById('slides-wrapper');
+let suppressSlideActivationUntil = 0;
+let lastTouchZoomActivationAt = 0;
+
+function suppressSlideActivation(duration = 400) {
+    suppressSlideActivationUntil = Date.now() + duration;
+}
+
+function shouldSuppressSlideActivation() {
+    return Date.now() < suppressSlideActivationUntil;
+}
 
 function createZoomIconSvg(isMinus) {
     const symbolPath = isMinus
@@ -106,6 +116,7 @@ function createZoomOverlay() {
     closeBtn.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        suppressSlideActivation();
         close();
     });
 
@@ -215,12 +226,26 @@ order.forEach((id) => {
     wrapper.appendChild(buildSlideNode(id));
 });
 
-wrapper.addEventListener('click', (event) => {
+function handleZoomButtonActivation(event) {
     const zoomBtn = event.target.closest('.slide-zoom-btn');
     if (!zoomBtn) return;
 
+    if (event.type === 'pointerup' && event.pointerType === 'mouse') {
+        return;
+    }
+
+    if (event.type === 'click' && Date.now() - lastTouchZoomActivationAt < 300) {
+        return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
+
+    suppressSlideActivation();
+
+    if (event.type === 'pointerup') {
+        lastTouchZoomActivationAt = Date.now();
+    }
 
     const slide = zoomBtn.closest('.swiper-slide');
     if (!slide) return;
@@ -229,7 +254,10 @@ wrapper.addEventListener('click', (event) => {
     if (!mediaEl) return;
 
     zoomOverlayController.openFrom(mediaEl);
-});
+}
+
+wrapper.addEventListener('pointerup', handleZoomButtonActivation);
+wrapper.addEventListener('click', handleZoomButtonActivation);
     
 const swiper = new Swiper('.swiper', {
     slidesPerView: 'auto',      
@@ -456,6 +484,10 @@ const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
 });
 
 swiper.on('click', (s, event) => {
+    if (shouldSuppressSlideActivation()) {
+        return;
+    }
+
     const clickedActiveSlide = event.target.closest('.swiper-slide-active');
     
     if (clickedActiveSlide) {
