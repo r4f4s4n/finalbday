@@ -843,28 +843,63 @@
                 const totalCustoms = getCustomsTotal();
                 const minVisibleCount = Math.max(1, Math.round(totalCustoms * 0.01));
                 let loadedCustoms = 0;
+                let simulatedCustoms = minVisibleCount;
+                let simulationLockedToReal = false;
+                let simulationTimerId = null;
                 const bootStartAt = performance.now();
 
-                updateProgress(minVisibleCount, totalCustoms, 'Invitados disfrazándose...');
+                function getShownCustoms() {
+                    return simulationLockedToReal
+                        ? Math.max(minVisibleCount, loadedCustoms)
+                        : Math.max(minVisibleCount, loadedCustoms, simulatedCustoms);
+                }
+
+                function stopSimulation() {
+                    if (simulationTimerId !== null) {
+                        clearInterval(simulationTimerId);
+                        simulationTimerId = null;
+                    }
+                    simulationLockedToReal = true;
+                }
+
+                updateProgress(getShownCustoms(), totalCustoms, 'Invitados disfrazándose...');
+
+                simulationTimerId = setInterval(() => {
+                    if (simulationLockedToReal) return;
+                    if (simulatedCustoms < totalCustoms - 1) {
+                        simulatedCustoms += 1;
+                    }
+
+                    if (loadedCustoms >= simulatedCustoms) {
+                        stopSimulation();
+                    }
+
+                    updateProgress(getShownCustoms(), totalCustoms, 'Invitados disfrazándose...');
+                }, 2000);
 
                 await preloadAppResources({
                     onCustomLoaded: () => {
                         loadedCustoms += 1;
-                        const shown = Math.max(minVisibleCount, loadedCustoms);
-                        updateProgress(shown, totalCustoms, 'Cargando customs...');
+
+                        if (!simulationLockedToReal && loadedCustoms >= simulatedCustoms) {
+                            stopSimulation();
+                        }
+
+                        updateProgress(getShownCustoms(), totalCustoms, 'Cargando customs...');
                     }
                 });
+
+                stopSimulation();
 
                 const elapsedMs = performance.now() - bootStartAt;
                 const waitRemainingMs = POST_LOAD_WAIT_MS - elapsedMs;
                 if (waitRemainingMs > 0) {
-                    const shown = Math.max(minVisibleCount, loadedCustoms);
-                    updateProgress(shown, totalCustoms, 'Ajustando escenario...');
+                    updateProgress(getShownCustoms(), totalCustoms, 'Ajustando escenario...');
                     await waitMs(waitRemainingMs);
                 }
 
                 updateProgress(
-                    Math.max(minVisibleCount, loadedCustoms),
+                    getShownCustoms(),
                     totalCustoms,
                     loadedCustoms >= totalCustoms
                         ? 'Todo listo. Entrando en intro...'
