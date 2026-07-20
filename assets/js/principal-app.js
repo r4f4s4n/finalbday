@@ -41,8 +41,35 @@ function shuffleArray(array) {
     }
     return array;
 }
+
+function findStartCustomId(data) {
+    const match = Object.entries(data).find(([, item]) => item && item.isStart === true);
+    return match ? parseInt(match[0], 10) : null;
+}
+
+function moveIdToFront(ids, targetId) {
+    if (targetId === null) return ids;
+    const index = ids.indexOf(targetId);
+    if (index <= 0) return ids;
+
+    const reordered = ids.slice();
+    reordered.splice(index, 1);
+    reordered.unshift(targetId);
+    return reordered;
+}
+
+const FIRST_VISIT_STORAGE_KEY = 'fb-principal-first-visit-done';
+const startCustomId = findStartCustomId(customsData);
+const isFirstPrincipalVisit = !sessionStorage.getItem(FIRST_VISIT_STORAGE_KEY);
+
+if (isFirstPrincipalVisit) {
+    sessionStorage.setItem(FIRST_VISIT_STORAGE_KEY, '1');
+}
     
-const order = shuffleArray(Object.keys(customsData).map(Number));
+const shuffledOrder = shuffleArray(Object.keys(customsData).map(Number));
+const order = isFirstPrincipalVisit
+    ? moveIdToFront(shuffledOrder, startCustomId)
+    : shuffledOrder;
 const wrapper = document.getElementById('slides-wrapper');
 
 function forceStartApp() {
@@ -123,6 +150,13 @@ forceStartApp();
 
 // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
 let currentSwiperIds = order;
+
+if (isFirstPrincipalVisit && startCustomId !== null) {
+    const startIndex = currentSwiperIds.indexOf(startCustomId);
+    if (startIndex !== -1) {
+        goToSlideIndex(startIndex, 0);
+    }
+}
 
 // Nº mínimo de slides para que el modo loop de Swiper funcione bien
 // con slidesPerView:'auto' sin lanzar warnings ni comportarse raro.

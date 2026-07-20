@@ -65,10 +65,37 @@
             }
         }
 
-        function preloadTransitionStartVideo() {
-            if (standbyBgVideo === bgVideoB) {
-                preloadStandbyBgVideo(transitionVideo);
+        function parkVideoAtStart(videoEl) {
+            if (!videoEl) return;
+
+            videoEl.pause();
+
+            const resetToFirstFrame = () => {
+                try {
+                    videoEl.currentTime = 0,5;
+                } catch (error) {
+                    // Algunos navegadores pueden bloquear el seek antes de metadata.
+                }
+            };
+
+            if (videoEl.readyState >= 1) {
+                resetToFirstFrame();
+                return;
             }
+
+            videoEl.addEventListener('loadedmetadata', function onLoadedMetadata() {
+                videoEl.removeEventListener('loadedmetadata', onLoadedMetadata);
+                resetToFirstFrame();
+            });
+        }
+
+        function preloadStandbyBgVideoAtStart(src) {
+            preloadStandbyBgVideo(src);
+            parkVideoAtStart(standbyBgVideo);
+        }
+
+        function preloadTransitionStartVideo() {
+            preloadStandbyBgVideoAtStart(transitionVideo);
         }
 
         function resetBgLayersToOriginalInstant() {
@@ -109,9 +136,10 @@
 
             function activateIncoming() {
                 if (token !== bgTransitionToken) return;
+                parkVideoAtStart(incoming);
                 incoming.loop = loop;
-                incoming.play().catch(() => {});
                 swapActiveBgVideo();
+                incoming.play().catch(() => {});
                 if (onActive) onActive(incoming);
             }
 

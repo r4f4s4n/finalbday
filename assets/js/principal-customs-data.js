@@ -70,7 +70,7 @@
     68: { year: "2024", category: "Navidad", theme: "Ana Obregón", file: "custom68.png" },
     69: { year: "2024", category: "Navidad", theme: "Tio de Nadal", file: "custom69.png" },
     70: { year: "2024", category: "Navidad", theme: "María & el toro", file: "custom70.png" },
-    71: { year: "2024", category: "Navidad", theme: "Lotería Navidad", file: "custom71.png" },
+    71: { year: "2024", category: "Navidad", theme: "Lotería Navidad", file: "custom71.png", isStart: true },
     72: { year: "2024", category: "Navidad", theme: "San Silvestre", file: "custom72.png" },
     73: { year: "2024", category: "Navidad", theme: "Invisible", file: "custom73.png" },
     74: { year: "2024", category: "Navidad", theme: "El tío del pollón", file: "custom74.png" },
