@@ -47,6 +47,9 @@
             inset: 0;
             overflow: hidden;
             border-radius: 8px;
+            --drive-scale: 1.16;
+            --drive-offset-x: -3%;
+            --drive-offset-y: -6%;
         }
 
         .cembe-video-frame iframe {
@@ -54,9 +57,12 @@
             top: 50%;
             left: 50%;
             display: block;
-            width: calc(100% + 68px);
-            height: calc(100% + 68px);
-            transform: translate(-50%, -50%);
+            width: calc(100% * var(--drive-scale));
+            height: calc(100% * var(--drive-scale));
+            transform: translate(
+                calc(-50% + var(--drive-offset-x)),
+                calc(-50% + var(--drive-offset-y))
+            );
             border: 0;
         }
 
@@ -76,6 +82,12 @@
                 width: min(260px, 66vw);
                 right: 6%;
                 bottom: 14%;
+            }
+
+            .cembe-video-viewport {
+                --drive-scale: 1.12;
+                --drive-offset-x: -2%;
+                --drive-offset-y: -4%;
             }
         }
 
