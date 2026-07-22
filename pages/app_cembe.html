@@ -48,63 +48,12 @@
             box-shadow: 1px 1px 0 #000;
         }
 
-        .cembe-nav-btn {
-            position: fixed;
-            left: 16px;
-            bottom: 16px;
-            width: 42px;
-            height: 42px;
-            z-index: 30;
-            user-select: none;
-            filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
-            border: 3px solid rgba(255, 255, 255, 0.18);
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 4px;
-            cursor: pointer;
-            animation: cembe-float 2.2s ease-in-out infinite;
-            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-            box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
-        }
-
-        .cembe-nav-btn:hover,
-        .cembe-nav-btn:focus-visible {
-            transform: scale(1.08);
-            border-color: rgba(255, 204, 0, 0.92);
-            background: rgba(20, 20, 20, 0.8);
-            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.18);
-            outline: none;
-            animation-play-state: paused;
-        }
-
-        .cembe-nav-btn:active {
-            transform: scale(1.02);
-            border-color: rgba(255, 255, 255, 0.92);
-        }
-
-        .cembe-nav-btn img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-        }
-
-        @keyframes cembe-float {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-            100% { transform: translateY(0); }
-        }
     </style>
 </head>
 <body>
     <div class="cembe-page" aria-label="Pantalla CEMBE"></div>
 
     <button class="back-btn" id="back-btn" type="button" aria-label="Volver atrás">ATRAS</button>
-
-    <button class="cembe-nav-btn" id="cembe-nav-button" type="button" aria-label="Pantalla CEMBE actual">
-        <img src="../assets/favicon/cembeicon.png" alt="">
-    </button>
 
     <script>
         function resolveFallbackUrl() {
@@ -121,12 +70,7 @@
             window.location.href = fallbackUrl;
         }
 
-        function stayOnCembePage() {
-            // El icono se mantiene visible en esta vista por consistencia visual.
-        }
-
         document.getElementById('back-btn').addEventListener('click', goBackToPreviousPage);
-        document.getElementById('cembe-nav-button').addEventListener('click', stayOnCembePage);
     </script>
 </body>
 </html>

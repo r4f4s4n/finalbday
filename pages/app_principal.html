@@ -670,22 +670,48 @@
         }
 
         .cembe-nav-btn {
+            --cembe-angle: 0deg;
             position: fixed;
             left: 16px;
             bottom: 16px;
-            width: 42px;
-            height: 42px;
+            width: 84px;
+            height: 84px;
             z-index: 250;
             user-select: none;
             filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
-            border: 3px solid rgba(255, 255, 255, 0.18);
-            border-radius: 10px;
+            border: 4px solid rgba(255, 255, 255, 0.24);
+            border-radius: 14px;
             background: rgba(0, 0, 0, 0.55);
-            padding: 4px;
+            padding: 8px;
             cursor: pointer;
+            position: fixed;
+            overflow: visible;
             animation: cembe-float 2.2s ease-in-out infinite;
-            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+            transition: left 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), bottom 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, filter 0.16s ease;
             box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
+        }
+
+        .cembe-nav-btn::before {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 18px;
+            padding: 4px;
+            background: conic-gradient(
+                from var(--cembe-angle),
+                #ff2d55,
+                #ff9500,
+                #ffd60a,
+                #32d74b,
+                #0a84ff,
+                #bf5af2,
+                #ff2d55
+            );
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .cembe-nav-btn:hover,
@@ -703,6 +729,20 @@
             border-color: rgba(255, 255, 255, 0.92);
         }
 
+        .cembe-nav-btn.is-launching {
+            animation: none;
+            left: 50%;
+            bottom: 50%;
+            transform: translate(-50%, 50%) scale(1.35);
+            filter: drop-shadow(0 0 14px rgba(255, 230, 120, 0.95));
+            border-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .cembe-nav-btn.is-launching::before {
+            opacity: 1;
+            animation: cembe-rainbow-shift 0.7s linear infinite;
+        }
+
         .cembe-nav-btn img {
             display: block;
             width: 100%;
@@ -715,6 +755,17 @@
             0% { transform: translateY(0); }
             50% { transform: translateY(-3px); }
             100% { transform: translateY(0); }
+        }
+
+        @keyframes cembe-rainbow-shift {
+            from { --cembe-angle: 0deg; }
+            to { --cembe-angle: 360deg; }
+        }
+
+        @property --cembe-angle {
+            syntax: '<angle>';
+            inherits: false;
+            initial-value: 0deg;
         }
     </style>
 </head>
@@ -739,13 +790,34 @@
     <script src="../assets/js/principal-bg-video.js"></script>
     <script src="../assets/js/principal-app.js"></script>
     <script>
+        function resetCembeNavButtonState() {
+            const cembeNavButton = document.getElementById('cembe-nav-button');
+            if (!cembeNavButton) return;
+
+            cembeNavButton.classList.remove('is-launching');
+            cembeNavButton.removeAttribute('aria-disabled');
+        }
+
         function openCembePage() {
+            const cembeNavButton = document.getElementById('cembe-nav-button');
+            if (cembeNavButton && cembeNavButton.classList.contains('is-launching')) {
+                return;
+            }
+
             const currentPath = window.location.pathname + window.location.search + window.location.hash;
             sessionStorage.setItem('fb-cembe-return-url', currentPath);
             if (window.FinalBdayBackGuard && typeof window.FinalBdayBackGuard.allowNextUnload === 'function') {
                 window.FinalBdayBackGuard.allowNextUnload();
             }
-            window.location.href = 'app_cembe.html';
+
+            if (cembeNavButton) {
+                cembeNavButton.classList.add('is-launching');
+                cembeNavButton.setAttribute('aria-disabled', 'true');
+            }
+
+            setTimeout(() => {
+                window.location.href = 'app_cembe.html';
+            }, 2000);
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -753,8 +825,11 @@
             if (cembeNavButton) {
                 cembeNavButton.addEventListener('click', openCembePage);
             }
+            resetCembeNavButtonState();
             window.FinalBdayPrincipalApp.init();
         });
+
+        window.addEventListener('pageshow', resetCembeNavButtonState);
     </script>
 </body>
 </html>
