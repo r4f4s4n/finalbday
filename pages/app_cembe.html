@@ -138,21 +138,27 @@
             top: 16px;
             left: 16px;
             z-index: 30;
-            background: #ffcc00;
-            color: #000;
-            font-weight: 900;
-            font-size: 15px;
-            border: 4px solid #000;
-            border-radius: 6px;
-            box-shadow: 4px 4px 0 #000;
-            padding: 10px 14px;
+            width: 56px;
+            height: 56px;
+            border: 0;
+            padding: 0;
+            background: transparent;
             cursor: pointer;
-            transition: transform 0.12s ease, box-shadow 0.12s ease;
+            filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
+            transition: transform 0.12s ease, filter 0.12s ease;
+        }
+
+        .back-btn img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
         }
 
         .back-btn:active {
-            transform: translate(2px, 2px);
-            box-shadow: 1px 1px 0 #000;
+            transform: scale(0.95);
+            filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.7));
         }
 
         .audio-status-indicator {
@@ -212,7 +218,9 @@
         </a>
     </div>
 
-    <button class="back-btn" id="back-btn" type="button" aria-label="Volver atrás">ATRAS</button>
+    <button class="back-btn" id="back-btn" type="button" aria-label="Volver atrás">
+        <img src="../assets/favicon/back.png" alt="">
+    </button>
     <button class="audio-status-indicator" id="audio-status-button" type="button" aria-label="Activar sonido" aria-pressed="false">
         <img id="audio-status-icon" src="../assets/favicon/vol-mute.png" alt="">
     </button>
