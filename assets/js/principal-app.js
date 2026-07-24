@@ -359,6 +359,17 @@ const mainSwiperEl = document.getElementById('main-swiper');
 const mainGridEl = document.getElementById('main-grid');
 const gridWrapper = document.getElementById('grid-wrapper');
 const diceBtn = document.getElementById('random-dice');
+const diceBtnIcon = diceBtn ? diceBtn.querySelector('img') : null;
+
+if (diceBtnIcon) {
+    const diceIconOriginalSrc = projectPath('assets/favicon/dados.png');
+    const diceIconResolvedSrc = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function'
+        ? window.FinalBdayAssetCache.resolve(diceIconOriginalSrc)
+        : diceIconOriginalSrc;
+    diceBtnIcon.setAttribute('data-asset-original-src', diceIconOriginalSrc);
+    diceBtnIcon.setAttribute('src', diceIconResolvedSrc);
+}
+
 const customsByYear = {};
 
 Object.entries(customsData).forEach(([id, data]) => {
