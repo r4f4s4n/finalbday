@@ -100,18 +100,12 @@ function shouldSuppressSlideActivation() {
     return Date.now() < suppressSlideActivationUntil;
 }
 
-function createZoomIconSvg(isMinus) {
-    const symbolPath = isMinus
-        ? '<line x1="6" y1="11" x2="14" y2="11" stroke="#000" stroke-width="2.4" stroke-linecap="round"/>'
-        : '<line x1="6" y1="11" x2="14" y2="11" stroke="#000" stroke-width="2.4" stroke-linecap="round"/><line x1="10" y1="7" x2="10" y2="15" stroke="#000" stroke-width="2.4" stroke-linecap="round"/>';
+function createZoomIconImage(isMinus) {
+    const iconPath = isMinus
+        ? projectPath('assets/favicon/lupamenos.png')
+        : projectPath('assets/favicon/lupamas.png');
 
-    return `
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <circle cx="10" cy="11" r="6" fill="none" stroke="#000" stroke-width="2.4"></circle>
-            <line x1="14.5" y1="15.5" x2="20" y2="21" stroke="#000" stroke-width="2.8" stroke-linecap="round"></line>
-            ${symbolPath}
-        </svg>
-    `;
+    return `<img src="${iconPath}" alt="" aria-hidden="true">`;
 }
 
 function createZoomOverlay() {
@@ -119,7 +113,7 @@ function createZoomOverlay() {
     overlay.className = 'media-zoom-overlay';
     overlay.id = 'media-zoom-overlay';
     overlay.innerHTML = `
-        <button class="media-zoom-close" id="media-zoom-close" type="button" aria-label="Cerrar pantalla completa">${createZoomIconSvg(true)}</button>
+        <button class="media-zoom-close" id="media-zoom-close" type="button" aria-label="Cerrar pantalla completa">${createZoomIconImage(true)}</button>
         <div class="media-zoom-content" id="media-zoom-content"></div>
     `;
     document.body.appendChild(overlay);
@@ -221,7 +215,7 @@ function buildSlideNode(id) {
         ? `<div class="winner-badge"><img src="${projectPath('assets/favicon/torfeo.png')}" alt="Ganador"></div>`
         : '';
 
-    const zoomButtonHTML = `<button class="slide-zoom-btn" type="button" aria-label="Ver en pantalla completa">${createZoomIconSvg(false)}</button>`;
+    const zoomButtonHTML = `<button class="slide-zoom-btn" type="button" aria-label="Ver en pantalla completa">${createZoomIconImage(false)}</button>`;
 
     const textHTML = `<span>${data.year}</span> | <span>${data.theme}</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`;
 
