@@ -478,6 +478,7 @@ const finalScreen = document.getElementById('final-screen');
 const finalPreviewBox = document.getElementById('final-preview-box');
 const finalTextBox = document.getElementById('final-text-box');
 const btnBack = document.getElementById('btn-back');
+const cembeNavButton = document.getElementById('cembe-nav-button');
 const bgVideoA = document.getElementById('app-bg-video');
 const bgVideoB = document.getElementById('app-bg-video-alt');
 
@@ -548,6 +549,9 @@ btnYes.addEventListener('click', () => {
     }
 
     finalScreen.style.display = 'flex';
+    if (cembeNavButton) {
+        cembeNavButton.classList.add('is-hidden');
+    }
 });
 
 btnBack.addEventListener('click', () => {
@@ -563,6 +567,9 @@ btnBack.addEventListener('click', () => {
     document.getElementById('select-container').style.pointerEvents = 'auto';
     diceBtn.style.opacity = '1';
     diceBtn.style.pointerEvents = 'auto';
+    if (cembeNavButton) {
+        cembeNavButton.classList.remove('is-hidden');
+    }
 
     swiper.update();
 });
