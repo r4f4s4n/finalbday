@@ -6,6 +6,12 @@ Aplicación experiencial multimedia con flujo de precarga, intro, navegación pr
 
 Definir una experiencia fluida entre pantallas donde la carga de recursos, la música y las transiciones visuales formen parte del propio recorrido del usuario.
 
+## Función principal (regla de negocio)
+
+La función principal de la aplicación es que el usuario pueda **elegir un custom (disfraz) para la última fiesta de cumpleaños**.
+
+El resto de mecánicas (precarga, intro, música, videos, transiciones, CEMBE) están al servicio de esa elección final y deben preservar su comportamiento actual para no cambiar la experiencia válida.
+
 ## Flujo funcional esperado
 
 ### 1. Página de precarga
@@ -96,6 +102,17 @@ Esta sección documenta el comportamiento actual que hoy se considera correcto y
 - El `final-screen` muestra el mensaje final con la información económica y de transferencia.
 - Desde el botón de volver se restaura el fondo original del principal, reaparecen controles y se vuelve al estado de navegación anterior.
 
+### Flujo canónico de elección (estado correcto a preservar)
+
+1. El usuario llega a principal tras pasar por precarga + intro.
+2. Explora customs mediante swiper, selector por año o dado aleatorio.
+3. La elección efectiva ocurre al pulsar el slide **activo** del swiper (no desde la cuadrícula).
+4. Se abre confirmación con el tema concreto del custom seleccionado.
+5. Al aceptar (`Sí`), la app entra en estado final y muestra preview del custom elegido.
+6. Al volver atrás, la app restablece el estado interactivo para poder seguir explorando y volver a elegir.
+
+Este flujo es la referencia funcional para el refactor.
+
 ### CEMBE actual
 
 - El acceso a CEMBE se hace desde un botón flotante independiente del flujo del swiper.
@@ -126,3 +143,22 @@ Esta sección documenta el comportamiento actual que hoy se considera correcto y
 - La app principal activa un guardado defensivo contra salida accidental por `back` y `beforeunload`.
 - La navegación permitida hacia CEMBE marca una excepción explícita para no chocar con ese guard.
 - El sistema de precarga mantiene una caché en memoria para reutilizar blobs de imágenes, videos y audio ya descargados.
+
+## Puntos de refactor propuestos (sin aplicar todavía)
+
+Esta sección recoge ideas para un refactor futuro. No describe el comportamiento actual en producción.
+
+- Convertir `app_cembe` en componente integrado dentro de la vista principal, evitando navegación de página completa.
+- Definir una transición visual hacia CEMBE alineada con la transición del final-screen para homogeneizar la experiencia.
+- Revisar y eliminar duplicidades de código (lógica repetida entre vistas, utilidades y manejo de estado/audio), priorizando reutilización y responsabilidad única.
+
+## Checklist de preservación para refactor
+
+Antes de dar por correcto un refactor, validar como mínimo:
+
+- El usuario puede llegar a principal y elegir un custom sin bloqueos.
+- La confirmación muestra el tema correcto del custom activo.
+- Al aceptar, se muestra el final-screen con preview del custom elegido.
+- El botón de volver desde final-screen restaura navegación principal.
+- El botón global de audio sigue funcionando en intro y principal.
+- La navegación a CEMBE y el retorno mantienen el flujo esperado.
