@@ -338,6 +338,7 @@
             initial-value: 0deg;
         }
     </style>
+    <link rel="stylesheet" href="assets/css/principal.css">
 </head>
 <body>
     <main class="loader-page" id="loader-page">
@@ -383,6 +384,7 @@
                     <div data-component="media-shell"></div>
                     <div data-component="confirm-dialog"></div>
                     <div data-component="final-screen"></div>
+                    <div data-component="cembe-view"></div>
                 </div>
             </div>
         </section>
@@ -393,6 +395,9 @@
     </audio>
     <audio id="intro-bg-birds" preload="auto" loop>
         <source data-asset-original-src="assets/videos/aves_16.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="cembe-bg-music" preload="auto" loop>
+        <source data-asset-original-src="assets/videos/pumpup.mp3" type="audio/mpeg">
     </audio>
 
     <button class="audio-status-indicator" id="audio-status-button" type="button" aria-label="Activar sonido" aria-pressed="false">
@@ -406,8 +411,10 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="components/loader.js"></script>
     <script src="assets/js/intro-audio.js"></script>
+    <script src="assets/js/audio-status-button.js"></script>
     <script src="assets/js/principal-back-guard.js"></script>
     <script src="assets/js/principal-customs-data.js"></script>
+    <script src="assets/js/resource-manifest.js"></script>
     <script src="assets/js/principal-bg-video.js"></script>
     <script src="assets/js/principal-app.js"></script>
     <script>
@@ -423,75 +430,35 @@
         const introTransitionVideo = document.getElementById('intro-transition-video');
         const globalBgMusic = document.getElementById('global-bg-music');
         const introBgBirds = document.getElementById('intro-bg-birds');
+        const cembeBgMusic = document.getElementById('cembe-bg-music');
         const audioStatusButton = document.getElementById('audio-status-button');
         const audioStatusIcon = document.getElementById('audio-status-icon');
         const cembeNavButton = document.getElementById('cembe-nav-button');
+        const cembeView = document.getElementById('cembe-view');
         const btnStart = document.getElementById('btn-start');
 
-        const AUDIO_ICON_MUTE = 'assets/favicon/vol-mute.png';
-        const AUDIO_ICON_PLAY = 'assets/favicon/vol-play.png';
-        let audioMutedByUser = false;
-
-        function isAudioElementPlaying(audioEl) {
-            return !!audioEl && !audioEl.paused && !audioEl.ended && audioEl.readyState > 1;
-        }
-
-        function updateAudioStatusIcon() {
-            if (!audioStatusIcon) return;
-
-            const isAnyAudioPlaying = !audioMutedByUser && (
-                isAudioElementPlaying(introBgBirds) || isAudioElementPlaying(globalBgMusic)
-            );
-            const nextIcon = isAnyAudioPlaying ? AUDIO_ICON_PLAY : AUDIO_ICON_MUTE;
-
-            if (audioStatusIcon.getAttribute('src') !== nextIcon) {
-                audioStatusIcon.setAttribute('src', nextIcon);
+        // El controller decide qué pista reanudar (aves, música principal o CEMBE)
+        // según la vista activa en el momento en que el usuario reactiva el sonido.
+        const audioStatusController = window.FinalBdayAudioStatusButton.createController({
+            buttonEl: audioStatusButton,
+            iconEl: audioStatusIcon,
+            audioElements: [introBgBirds, globalBgMusic, cembeBgMusic],
+            iconMutedSrc: 'assets/favicon/vol-mute.png',
+            iconPlaySrc: 'assets/favicon/vol-play.png',
+            onResume: function () {
+                if (cembeView && cembeView.classList.contains('is-visible')) {
+                    cembeBgMusic.play().catch(() => {});
+                } else if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {
+                    introAudio.startGlobalBackgroundMusic();
+                } else {
+                    introAudio.startIntroBirdsMusic();
+                }
             }
-
-            if (audioStatusButton) {
-                audioStatusButton.setAttribute('aria-label', isAnyAudioPlaying ? 'Silenciar sonido' : 'Activar sonido');
-                audioStatusButton.setAttribute('aria-pressed', isAnyAudioPlaying ? 'true' : 'false');
-            }
-        }
-
-        function setAudioMutedState(shouldMute) {
-            audioMutedByUser = shouldMute;
-            introBgBirds.muted = shouldMute;
-            globalBgMusic.muted = shouldMute;
-
-            if (shouldMute) {
-                introBgBirds.pause();
-                globalBgMusic.pause();
-                updateAudioStatusIcon();
-                return;
-            }
-
-            if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {
-                introAudio.startGlobalBackgroundMusic();
-            } else {
-                introAudio.startIntroBirdsMusic();
-            }
-
-            updateAudioStatusIcon();
-        }
-
-        [introBgBirds, globalBgMusic].forEach((audioEl) => {
-            if (!audioEl) return;
-            audioEl.addEventListener('play', updateAudioStatusIcon);
-            audioEl.addEventListener('playing', updateAudioStatusIcon);
-            audioEl.addEventListener('pause', updateAudioStatusIcon);
-            audioEl.addEventListener('ended', updateAudioStatusIcon);
-            audioEl.addEventListener('emptied', updateAudioStatusIcon);
-            audioEl.addEventListener('waiting', updateAudioStatusIcon);
         });
 
-        if (audioStatusButton) {
-            audioStatusButton.addEventListener('click', () => {
-                setAudioMutedState(!audioMutedByUser);
-            });
-        }
-
-        updateAudioStatusIcon();
+        // Expuesto para que principal-app.js pueda consultar si el usuario
+        // silenció el sonido antes de reanudar la pista de CEMBE.
+        window.FinalBdayAppAudioController = audioStatusController;
 
         window.__FB_LOADER_OPTIONS = {
             stripParentPrefix: true,
@@ -788,120 +755,13 @@
             }
         }
 
-        function isValidResourcePath(path) {
-            if (!path) return false;
-            if (path.startsWith('data:')) return false;
-            if (path.startsWith('javascript:')) return false;
-            if (path.startsWith('#')) return false;
-            return true;
-        }
-
-        function extractResourceUrls(text, baseUrl) {
-            const urls = new Set();
-            const attrRegex = /(src|href)=["']([^"']+)["']/gi;
-            const assetRegex = /["'](\.\.\/assets\/[^"']+)["']/gi;
-            const componentRegex = /["'](\.\.\/components\/[^"']+)["']/gi;
-
-            let match;
-            while ((match = attrRegex.exec(text)) !== null) {
-                const raw = match[2].trim();
-                if (!isValidResourcePath(raw)) continue;
-                if (raw.indexOf('${') !== -1) continue;
-                urls.add(new URL(raw, baseUrl).href);
-            }
-
-            while ((match = assetRegex.exec(text)) !== null) {
-                const rawAsset = match[1].trim();
-                if (rawAsset.indexOf('${') !== -1) continue;
-                urls.add(new URL(rawAsset, baseUrl).href);
-            }
-
-            while ((match = componentRegex.exec(text)) !== null) {
-                const rawComponent = match[1].trim();
-                if (rawComponent.indexOf('${') !== -1) continue;
-                urls.add(new URL(rawComponent, baseUrl).href);
-            }
-
-            return urls;
-        }
-
-        async function discoverResources() {
-            const pages = [
-                'pages/app_intro.html',
-                'pages/app_principal.html'
-            ];
-
-            const resources = new Set([
-                new URL('assets/videos/aves_16.mp3', location.href).href,
-                new URL('assets/favicon/favicon.ico', location.href).href,
-                new URL('components/loader.js', location.href).href,
-                new URL('components/app-controls.html', location.href).href,
-                new URL('components/app-media-shell.html', location.href).href,
-                new URL('components/app-confirm-dialog.html', location.href).href,
-                new URL('components/app-final-screen.html', location.href).href,
-                new URL('assets/videos/video_movil.mp4', location.href).href,
-                new URL('assets/videos/video_escritorio.mp4', location.href).href,
-                new URL('assets/videos/zoom_movil.mp4', location.href).href,
-                new URL('assets/videos/zoom_escritorio.mp4', location.href).href,
-                new URL('assets/videos/interior_student_cafe.mp3', location.href).href,
-                new URL('pages/app_principal.html', location.href).href
-            ]);
-
-            for (const pagePath of pages) {
-                const pageUrl = new URL(pagePath, location.href);
-                const response = await fetch(pageUrl.href, { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error('No se pudo leer ' + pagePath + ' (' + response.status + ')');
-                }
-
-                const text = await response.text();
-                const found = extractResourceUrls(text, pageUrl.href);
-                for (const url of found) {
-                    resources.add(url);
-                }
-
-                if (pagePath === 'pages/app_principal.html') {
-                    // Los archivos de customs ahora viven en el módulo
-                    // principal-customs-data.js (ya cargado como <script>).
-                    // Usamos la API directamente en lugar de parsear el HTML.
-                    if (window.FinalBdayCustomsData && typeof window.FinalBdayCustomsData.getData === 'function') {
-                        const customsData = window.FinalBdayCustomsData.getData();
-                        for (const item of Object.values(customsData)) {
-                            if (item.file) {
-                                resources.add(new URL('assets/customs/' + item.file, location.href).href);
-                            }
-                        }
-                    }
-
-                    // Videos de fondo del principal: ya no están inline en el
-                    // HTML, así que los añadimos explícitamente.
-                    const bgVideos = [
-                        'assets/videos/disco_movil.mp4',
-                        'assets/videos/bar1-movil.mp4',
-                        'assets/videos/bar2-movil.mp4'
-                    ];
-                    for (const v of bgVideos) {
-                        resources.add(new URL(v, location.href).href);
-                    }
-                }
-            }
-
-            const sameOriginResources = [];
-            for (const url of resources) {
-                try {
-                    const parsed = new URL(url);
-                    if (parsed.origin === location.origin) {
-                        if (parsed.href.indexOf('${') !== -1 || parsed.href.indexOf('%7B') !== -1) {
-                            continue;
-                        }
-                        sameOriginResources.push(parsed.href);
-                    }
-                } catch (e) {
-                    console.warn('URL ignorada:', url, e);
-                }
-            }
-
-            return sameOriginResources;
+        // El descubrimiento de recursos ahora es estático: ver
+        // assets/js/resource-manifest.js (Fase 6 del refactor). Antes esta
+        // función hacía fetch + regex sobre pages/app_intro.html y
+        // pages/app_principal.html en tiempo de ejecución para averiguar
+        // qué precargar; ya no hace falta ninguna de esas dos páginas.
+        function discoverResources() {
+            return window.FinalBdayResourceManifest.build();
         }
 
         async function preloadAppResources(options) {
@@ -1027,38 +887,13 @@
             await Promise.all(workers);
         }
 
-        function extractPrincipalStyle(pageHtml) {
-            const styleMatch = pageHtml.match(/<style>([\s\S]*?)<\/style>/i);
-            if (!styleMatch) return '';
-            return styleMatch[1];
-        }
-
         async function initPrincipalApp() {
             if (principalInitPromise) return principalInitPromise;
 
             principalInitPromise = (async () => {
-                const cachedPageHtml = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.getText === 'function'
-                    ? window.FinalBdayAssetCache.getText('pages/app_principal.html')
-                    : '';
-
-                let pageHtml = cachedPageHtml;
-                if (!pageHtml) {
-                    const pageResponse = await fetch('pages/app_principal.html', { cache: 'no-store' });
-                    if (!pageResponse.ok) {
-                        throw new Error('No se pudo leer pages/app_principal.html (' + pageResponse.status + ')');
-                    }
-
-                    pageHtml = await pageResponse.text();
-                }
-
-                const principalStyle = extractPrincipalStyle(pageHtml);
-                if (principalStyle) {
-                    const styleTag = document.createElement('style');
-                    styleTag.id = 'principal-inline-style';
-                    styleTag.textContent = principalStyle.replace(/\.\.\/assets\//g, 'assets/');
-                    document.head.appendChild(styleTag);
-                }
-
+                // El CSS de la vista principal ya se sirve como assets/css/principal.css
+                // (Fase 5 del refactor). Ya no hace falta leer pages/app_principal.html
+                // ni extraer su <style> por regex en tiempo de ejecución.
                 if (!window.FinalBdayPrincipalApp || typeof window.FinalBdayPrincipalApp.init !== 'function') {
                     throw new Error('No se pudo inicializar assets/js/principal-app.js');
                 }
@@ -1094,19 +929,16 @@
                 return;
             }
 
-            const currentPath = window.location.pathname + window.location.search + window.location.hash;
-            sessionStorage.setItem('fb-cembe-return-url', currentPath);
-            if (window.FinalBdayBackGuard && typeof window.FinalBdayBackGuard.allowNextUnload === 'function') {
-                window.FinalBdayBackGuard.allowNextUnload();
-            }
-
             if (cembeNavButton) {
                 cembeNavButton.classList.add('is-launching');
                 cembeNavButton.setAttribute('aria-disabled', 'true');
             }
 
             setTimeout(() => {
-                window.location.href = 'pages/app_cembe.html';
+                if (window.FinalBdayPrincipalApp && typeof window.FinalBdayPrincipalApp.showCembeView === 'function') {
+                    window.FinalBdayPrincipalApp.showCembeView();
+                }
+                resetCembeNavButtonState();
             }, 2000);
         }
 

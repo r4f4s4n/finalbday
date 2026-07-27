@@ -55,13 +55,14 @@ Esta sección documenta el comportamiento actual que hoy se considera correcto y
 
 ### Arquitectura actual del flujo
 
-- La experiencia principal vive en `index.html`, que contiene tres estados dentro de una misma shell: precarga, intro y principal.
-- `app_cembe` sigue siendo una página separada (`pages/app_cembe.html`) y se abre mediante navegación de página completa.
-- La vista principal carga componentes HTML parciales para controles, media-shell, diálogo de confirmación y final-screen.
+- La experiencia completa vive en `index.html`, que contiene cuatro estados dentro de una misma shell: precarga, intro, principal y CEMBE.
+- `app_cembe` es un componente integrado (`components/app-cembe-view.html`) que se muestra/oculta dentro de la propia vista principal, sin navegación de página completa.
+- La vista principal carga componentes HTML parciales para controles, media-shell, diálogo de confirmación, final-screen y la vista CEMBE.
+- Las antiguas páginas standalone (`pages/app_intro.html`, `pages/app_principal.html`, `pages/app_cembe.html`) ya no existen; todo el flujo vive en `index.html` y sus componentes/JS compartidos.
 
 ### Precarga actual
 
-- La precarga no solo carga recursos visibles inmediatos, sino que descubre y precarga recursos de `pages/app_intro.html`, `pages/app_principal.html`, componentes, favicon, videos, audios y todos los customs.
+- La precarga no solo carga recursos visibles inmediatos, sino que precarga una lista explícita de recursos definida en `assets/js/resource-manifest.js` (componentes, favicon, videos, audios) más todos los customs (obtenidos de `principal-customs-data.js`).
 - La precarga de recursos se hace con concurrencia limitada.
 - El audio `aves_16.mp3` se prioriza para cargarse antes que el resto de recursos multimedia.
 - En cuanto ese audio está disponible, la app intenta empezar a reproducirlo automáticamente.
@@ -117,10 +118,10 @@ Este flujo es la referencia funcional para el refactor.
 
 - El acceso a CEMBE se hace desde un botón flotante independiente del flujo del swiper.
 - Ese botón está oculto durante la intro y también mientras se muestra el final-screen.
-- Al pulsarlo, la app guarda una URL de retorno en `sessionStorage`, espera aproximadamente 2 segundos y navega a `pages/app_cembe.html`.
-- La página `app_cembe` reproduce `pumpup.mp3` en loop y muestra su propio botón de audio y un botón de volver.
-- La vuelta desde CEMBE usa el historial del navegador si existe; si no, usa la URL de retorno guardada o vuelve a `index.html`.
-- El estado de mute de CEMBE es independiente del estado de audio de la shell principal.
+- Al pulsarlo, tras una breve animación de lanzamiento (~2 segundos), la app muestra la vista CEMBE integrada (`showCembeView()`) sin navegar a otra página ni tocar `sessionStorage`.
+- La vista CEMBE reproduce `pumpup.mp3` en loop mientras está visible; la música global del principal se pausa mientras tanto.
+- El botón de volver de CEMBE oculta la vista (`hideCembeView()`) y reanuda la música global si el audio no está silenciado.
+- El estado de mute es compartido con el resto de la app a través del mismo controlador de audio global (`audio-status-button`).
 
 ### Sonido actual
 
@@ -144,13 +145,15 @@ Este flujo es la referencia funcional para el refactor.
 - La navegación permitida hacia CEMBE marca una excepción explícita para no chocar con ese guard.
 - El sistema de precarga mantiene una caché en memoria para reutilizar blobs de imágenes, videos y audio ya descargados.
 
-## Puntos de refactor propuestos (sin aplicar todavía)
+## Refactor aplicado
 
-Esta sección recoge ideas para un refactor futuro. No describe el comportamiento actual en producción.
+Las siguientes ideas de refactor, antes propuestas, ya se aplicaron:
 
-- Convertir `app_cembe` en componente integrado dentro de la vista principal, evitando navegación de página completa.
-- Definir una transición visual hacia CEMBE alineada con la transición del final-screen para homogeneizar la experiencia.
-- Revisar y eliminar duplicidades de código (lógica repetida entre vistas, utilidades y manejo de estado/audio), priorizando reutilización y responsabilidad única.
+- `app_cembe` se convirtió en un componente integrado dentro de la vista principal, evitando la navegación de página completa.
+- Se eliminaron duplicidades de código (botón de audio unificado en `audio-status-button.js`, CSS de `principal` consolidado en `assets/css/principal.css`, resource manifest estático en lugar de escaneo por regex).
+- Se eliminaron las páginas standalone `pages/app_intro.html`, `pages/app_principal.html` y `pages/app_cembe.html`, ya sin ningún consumidor.
+
+Pendiente (no aplicado): definir una transición visual hacia CEMBE alineada con la transición del final-screen, para homogeneizar la experiencia.
 
 ## Checklist de preservación para refactor
 
