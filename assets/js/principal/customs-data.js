@@ -90,7 +90,7 @@
     87: { year: "2025", category: "Dibujitos", theme: "Los Picapiedras", file: "custom87.png" },
     88: { year: "2025", category: "Dibujitos", theme: "La pajarería de Transilvania", file: "custom88.png" },
     89: { year: "2025", category: "Dibujitos", theme: "Gato de Cheshire", file: "custom89.png" },
-    90: { year: "2025", category: "Dibujitos", theme: "Aladdín & Jazmín", file: "custom90.png" },
+    90: { year: "2025", category: "Dibujitos", theme: "Jazmín", file: "custom90.png" },
     91: { year: "2025", category: "Dibujitos", theme: "Calimero", file: "custom91.png" },
     92: { year: "2025", category: "Dibujitos", theme: "Heidi", file: "custom92.png" },
     93: { year: "2025", category: "Dibujitos", theme: "Inspectores Gadget", file: "custom93.png" },
@@ -121,7 +121,13 @@
     118: { year: "2019", category: "Década 2010", theme: "El Ogro de la droga", file: "custom118.png" },
     119: { year: "2022", category: "La Historia", theme: "Napoleón Malaparte", file: "custom119.png" },
     120: { year: "2024", category: "Navidad", theme: "Camella", file: "custom120.png" },
-    121: { year: "2018", category: "Ciencia ficción", theme: "Wail Smail", file: "custom121.png" }
+    121: { year: "2018", category: "Ciencia ficción", theme: "Wail Smail", file: "custom121.png" },
+    122: { year: "2015", category: "Los Grammys", theme: "Camarón de la Isla canaria", file: "custom122.png" },
+    123: { year: "2015", category: "Los Grammys", theme: "Jimmi Hendrix", file: "custom123.png" },
+    143: { year: "2022", category: "La Historia", theme: "Guerra Civil Española", file: "custom124.png" },
+    125: { year: "2025", category: "Dibujitos", theme: "Pepe Bernáldez", file: "custom125.png" },
+    126: { year: "2025", category: "Dibujitos", theme: "Aladdín", file: "custom126.png" },
+    127: { year: "2024", category: "Navidad", theme: "MEGATRÓN", file: "custom127.png" }
         };
     }
 
