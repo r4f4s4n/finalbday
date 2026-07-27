@@ -124,7 +124,7 @@
     121: { year: "2018", category: "Ciencia ficción", theme: "Wail Smail", file: "custom121.png" },
     122: { year: "2015", category: "Los Grammys", theme: "Camarón de la Isla canaria", file: "custom122.png" },
     123: { year: "2015", category: "Los Grammys", theme: "Jimmi Hendrix", file: "custom123.png" },
-    143: { year: "2022", category: "La Historia", theme: "Guerra Civil Española", file: "custom124.png" },
+    124: { year: "2022", category: "La Historia", theme: "Guerra Civil Española", file: "custom124.png" },
     125: { year: "2025", category: "Dibujitos", theme: "Pepe Bernáldez", file: "custom125.png" },
     126: { year: "2025", category: "Dibujitos", theme: "Aladdín", file: "custom126.png" },
     127: { year: "2024", category: "Navidad", theme: "MEGATRÓN", file: "custom127.png" }
