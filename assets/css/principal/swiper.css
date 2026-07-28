@@ -17,7 +17,7 @@
     width: auto;
     min-width: 130px;
     max-width: min(320px, calc(100vw - 24px));
-    padding: 3px 6px;
+    padding: 4px 8px;
     background: #ff00ff;
     color: #ffcc00;
     border: 4px solid #000000;
@@ -26,7 +26,7 @@
     
     font-family: 'VT323', monospace;
     font-weight: 400;
-    font-size: 16px;
+    font-size: 18px;
     line-height: 0.95;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -180,6 +180,15 @@
     width: auto;
     height: auto;
     object-fit: contain;
+}
+
+.media-zoom-content img {
+    transition: transform 0.2s ease;
+    transform-origin: center center;
+}
+
+.media-zoom-content img.is-zoomed {
+    transform: scale(1.8);
 }
 
 .media-zoom-close {

@@ -129,10 +129,58 @@ function createZoomOverlay() {
     document.body.appendChild(overlay);
 
     const closeBtn = overlay.querySelector('#media-zoom-close');
+    const zoomContent = overlay.querySelector('#media-zoom-content');
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
+    let isZoomedIn = false;
+
+    function setZoomState(shouldZoomIn) {
+        const mediaEl = zoomContent.querySelector('img');
+        if (!mediaEl) return;
+
+        isZoomedIn = shouldZoomIn;
+        mediaEl.classList.toggle('is-zoomed', shouldZoomIn);
+    }
+
+    function resetZoomState() {
+        isZoomedIn = false;
+        const mediaEl = zoomContent.querySelector('img');
+        if (mediaEl) {
+            mediaEl.classList.remove('is-zoomed');
+        }
+    }
+
+    function handleZoomContentPointerUp(event) {
+        const mediaEl = event.target.closest('img');
+        if (!mediaEl || event.pointerType === 'mouse') return;
+
+        const now = Date.now();
+        const deltaTime = now - lastTapTime;
+        const deltaX = Math.abs(event.clientX - lastTapX);
+        const deltaY = Math.abs(event.clientY - lastTapY);
+        const isDoubleTap = deltaTime > 0 && deltaTime < 320 && deltaX < 22 && deltaY < 22;
+
+        lastTapTime = now;
+        lastTapX = event.clientX;
+        lastTapY = event.clientY;
+
+        if (!isDoubleTap) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        setZoomState(!isZoomedIn);
+    }
+
+    zoomContent.addEventListener('pointerup', handleZoomContentPointerUp);
     const close = () => {
         overlay.classList.remove('is-visible');
-        const zoomContent = overlay.querySelector('#media-zoom-content');
         zoomContent.innerHTML = '';
+        lastTapTime = 0;
+        lastTapX = 0;
+        lastTapY = 0;
+        resetZoomState();
     };
 
     closeBtn.addEventListener('click', (event) => {
@@ -161,8 +209,8 @@ function createZoomOverlay() {
         overlay: overlay,
         openFrom: (sourceMedia) => {
             if (!sourceMedia) return;
-            const zoomContent = overlay.querySelector('#media-zoom-content');
             zoomContent.innerHTML = '';
+            resetZoomState();
 
             const clone = sourceMedia.cloneNode(true);
             if (clone.tagName === 'VIDEO') {
