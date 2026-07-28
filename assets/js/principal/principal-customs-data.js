@@ -47,7 +47,7 @@
     45: { year: "2021", category: "La Tele", theme: "Space Jam", file: "custom45.png" },
     46: { year: "2021", category: "La Tele", theme: "Art Attack", file: "custom46.png" },
     47: { year: "2022", category: "La Historia", theme: "Amadeo de Cebolla", file: "custom47.png" },
-    48: { year: "2022", category: "La Historia", theme: "La batalla de Stalingrado", file: "custom48.png" },
+    48: { year: "2022", category: "La Historia", theme: "La batalla de Stalingrado", file: "custom48.mp4" },
     49: { year: "2022", category: "La Historia", theme: "Da Vinci & la Mona Lisa", file: "custom49.png" },
     50: { year: "2022", category: "La Historia", theme: "Templario (Pablo Pedro-Pedro-Pedro)", file: "custom50.png" },
     51: { year: "2022", category: "La Historia", theme: "Torres Gemelas", file: "custom51.mp4", isWinner: true },			
@@ -100,7 +100,7 @@
     98: { year: "2013", category: "Hospital", theme: "Dr. House", file: "custom98.png" },
     99: { year: "2014", category: "Paradas de Metro", theme: "Barajas", file: "custom99.png" },
     100: { year: "2014", category: "Paradas de Metro", theme: "Oporto", file: "custom100.png" },
-    101: { year: "2015", category: "Los Grammys", theme: "Pink", file: "custom101.png" },
+    101: { year: "2015", category: "Los Grammys", theme: "Lucrecia", file: "custom101.png" },
     102: { year: "2015", category: "Los Grammys", theme: "Tony Moreno (Eskorzo)", file: "custom102.png" },
     103: { year: "2017", category: "Películas", theme: "Chewbacca", file: "custom103.png" },
     104: { year: "2017", category: "Películas", theme: "Audrey Hepburn", file: "custom104.png" },
@@ -127,7 +127,14 @@
     125: { year: "2025", category: "Dibujitos", theme: "Pepe Bernáldez", file: "custom125.png" },
     126: { year: "2025", category: "Dibujitos", theme: "Aladdín", file: "custom126.png" },
     127: { year: "2024", category: "Navidad", theme: "MEGATRÓN", file: "custom127.mp4" },
-    128: { year: "2025", category: "Dibujitos", theme: "Chyrymoya Bayo", file: "custom128.png" }
+    128: { year: "2025", category: "Dibujitos", theme: "Chyrymoya Bayo", file: "custom128.png" },
+    129: { year: "2013", category: "Hospital", theme: "Paciente en Nochevieja", file: "custom129.png" },
+    130: { year: "2013", category: "Hospital", theme: "Gitana con bebé", file: "custom130.png" },
+    131: { year: "2013", category: "Hospital", theme: "Radiografiada", file: "custom131.png" },
+    132: { year: "2013", category: "Hospital", theme: "Esguince de codo", file: "custom132.png" },
+    133: { year: "2013", category: "Hospital", theme: "Esguince de muñeca", file: "custom133.png" },
+    134: { year: "2013", category: "Hospital", theme: "Josef Mengele", file: "custom134.png" },
+    135: { year: "2014", category: "Paradas de Metro", theme: "Santiago Bernabéu", file: "custom135.png" }
     };
 
     function getData() {

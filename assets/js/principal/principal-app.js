@@ -133,27 +133,182 @@ function createZoomOverlay() {
     let lastTapTime = 0;
     let lastTapX = 0;
     let lastTapY = 0;
-    let isZoomedIn = false;
+    let zoomState = {
+        isZoomedIn: false,
+        scale: 1,
+        tx: 0,
+        ty: 0,
+        isDragging: false,
+        lastPointerX: 0,
+        lastPointerY: 0,
+        hasMoved: false
+    };
+    let activePointers = new Map();
+    let pinchState = {
+        active: false,
+        startDistance: 0,
+        startScale: 1,
+        startTx: 0,
+        startTy: 0,
+        startMidX: 0,
+        startMidY: 0
+    };
+
+    function applyZoomTransform() {
+        const stage = zoomContent.querySelector('.zoom-stage');
+        if (!stage) return;
+
+        stage.style.setProperty('--scale', zoomState.scale.toFixed(3));
+        stage.style.setProperty('--tx', `${zoomState.tx}px`);
+        stage.style.setProperty('--ty', `${zoomState.ty}px`);
+    }
+
+    function clampScale(nextScale) {
+        return Math.min(3, Math.max(1, nextScale));
+    }
+
+    function clampPan() {
+        const viewportSize = Math.max(window.innerWidth, window.innerHeight);
+        const maxOffset = viewportSize * (zoomState.scale - 1) * 0.5;
+        zoomState.tx = Math.max(-maxOffset, Math.min(maxOffset, zoomState.tx));
+        zoomState.ty = Math.max(-maxOffset, Math.min(maxOffset, zoomState.ty));
+    }
 
     function setZoomState(shouldZoomIn) {
-        const mediaEl = zoomContent.querySelector('img');
-        if (!mediaEl) return;
+        zoomState.isZoomedIn = shouldZoomIn;
+        zoomState.scale = shouldZoomIn ? 1.8 : 1;
 
-        isZoomedIn = shouldZoomIn;
-        mediaEl.classList.toggle('is-zoomed', shouldZoomIn);
+        if (!shouldZoomIn) {
+            zoomState.tx = 0;
+            zoomState.ty = 0;
+        } else {
+            clampPan();
+        }
+
+        applyZoomTransform();
     }
 
     function resetZoomState() {
-        isZoomedIn = false;
-        const mediaEl = zoomContent.querySelector('img');
-        if (mediaEl) {
-            mediaEl.classList.remove('is-zoomed');
+        zoomState.isZoomedIn = false;
+        zoomState.scale = 1;
+        zoomState.tx = 0;
+        zoomState.ty = 0;
+        zoomState.isDragging = false;
+        zoomState.hasMoved = false;
+        activePointers.clear();
+        pinchState.active = false;
+        pinchState.startDistance = 0;
+        pinchState.startScale = 1;
+        pinchState.startTx = 0;
+        pinchState.startTy = 0;
+        pinchState.startMidX = 0;
+        pinchState.startMidY = 0;
+        applyZoomTransform();
+    }
+
+    function getDistance(p1, p2) {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        return Math.hypot(dx, dy);
+    }
+
+    function getMidpoint(p1, p2) {
+        return {
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2
+        };
+    }
+
+    function handleZoomContentPointerDown(event) {
+        if (event.pointerType === 'mouse') return;
+
+        activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        event.currentTarget.setPointerCapture(event.pointerId);
+
+        const pointers = Array.from(activePointers.values());
+        if (pointers.length === 2) {
+            const midpoint = getMidpoint(pointers[0], pointers[1]);
+            pinchState.active = true;
+            pinchState.startDistance = getDistance(pointers[0], pointers[1]);
+            pinchState.startScale = zoomState.scale;
+            pinchState.startTx = zoomState.tx;
+            pinchState.startTy = zoomState.ty;
+            pinchState.startMidX = midpoint.x;
+            pinchState.startMidY = midpoint.y;
+            zoomState.isDragging = false;
+            zoomState.hasMoved = false;
+            return;
+        }
+
+        if (pointers.length === 1 && zoomState.scale > 1) {
+            zoomState.isDragging = true;
+            zoomState.hasMoved = false;
+            zoomState.lastPointerX = event.clientX;
+            zoomState.lastPointerY = event.clientY;
         }
     }
 
+    function handleZoomContentPointerMove(event) {
+        if (event.pointerType === 'mouse') return;
+
+        if (!activePointers.has(event.pointerId)) return;
+
+        activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        const pointers = Array.from(activePointers.values());
+
+        if (pointers.length === 2 && pinchState.active) {
+            const midpoint = getMidpoint(pointers[0], pointers[1]);
+            const nextDistance = getDistance(pointers[0], pointers[1]);
+            const nextScale = clampScale(pinchState.startScale * (nextDistance / Math.max(pinchState.startDistance, 1)));
+            zoomState.scale = nextScale;
+            zoomState.isZoomedIn = zoomState.scale > 1;
+            zoomState.tx = pinchState.startTx + (midpoint.x - pinchState.startMidX);
+            zoomState.ty = pinchState.startTy + (midpoint.y - pinchState.startMidY);
+            if (!zoomState.isZoomedIn) {
+                zoomState.tx = 0;
+                zoomState.ty = 0;
+            } else {
+                clampPan();
+            }
+            applyZoomTransform();
+            return;
+        }
+
+        if (!zoomState.isDragging || pointers.length !== 1) return;
+
+        const deltaX = event.clientX - zoomState.lastPointerX;
+        const deltaY = event.clientY - zoomState.lastPointerY;
+        const movedEnough = Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2;
+
+        zoomState.hasMoved = zoomState.hasMoved || movedEnough;
+        zoomState.tx += deltaX;
+        zoomState.ty += deltaY;
+        zoomState.lastPointerX = event.clientX;
+        zoomState.lastPointerY = event.clientY;
+
+        clampPan();
+        applyZoomTransform();
+    }
+
     function handleZoomContentPointerUp(event) {
-        const mediaEl = event.target.closest('img');
-        if (!mediaEl || event.pointerType === 'mouse') return;
+        if (event.pointerType === 'mouse') return;
+
+        if (activePointers.has(event.pointerId)) {
+            activePointers.delete(event.pointerId);
+        }
+
+        if (zoomState.isDragging && zoomState.hasMoved) {
+            zoomState.isDragging = false;
+            zoomState.hasMoved = false;
+            return;
+        }
+
+        zoomState.isDragging = false;
+
+        if (activePointers.size >= 2 || pinchState.active) {
+            pinchState.active = false;
+            return;
+        }
 
         const now = Date.now();
         const deltaTime = now - lastTapTime;
@@ -170,10 +325,19 @@ function createZoomOverlay() {
         event.preventDefault();
         event.stopPropagation();
 
-        setZoomState(!isZoomedIn);
+        setZoomState(!zoomState.isZoomedIn);
     }
 
+    zoomContent.addEventListener('pointerdown', handleZoomContentPointerDown);
+    zoomContent.addEventListener('pointermove', handleZoomContentPointerMove);
     zoomContent.addEventListener('pointerup', handleZoomContentPointerUp);
+    zoomContent.addEventListener('pointercancel', () => {
+        zoomState.isDragging = false;
+        zoomState.hasMoved = false;
+        pinchState.active = false;
+        activePointers.clear();
+    });
+
     const close = () => {
         overlay.classList.remove('is-visible');
         zoomContent.innerHTML = '';
@@ -222,7 +386,12 @@ function createZoomOverlay() {
                 clone.play().catch(() => {});
             }
 
-            zoomContent.appendChild(clone);
+            const stage = document.createElement('div');
+            stage.className = 'zoom-stage';
+            stage.appendChild(clone);
+
+            zoomContent.appendChild(stage);
+            resetZoomState();
             overlay.classList.add('is-visible');
         }
     };
