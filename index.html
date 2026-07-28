@@ -7,337 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
-    <style>
-        :root {
-            --bg-a: #07070f;
-            --bg-b: #1a0a2b;
-            --ink: #f4efe1;
-            --accent: #ffcc00;
-            --accent-2: #ff00ff;
-            --frame: #000000;
-        }
-
-        * { box-sizing: border-box; }
-
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            color: var(--ink);
-            font-family: 'VT323', monospace;
-        }
-
-        .loader-page {
-            position: fixed;
-            inset: 0;
-            display: grid;
-            place-items: center;
-            padding: 24px;
-            background:
-                radial-gradient(circle at 20% 20%, rgba(255, 204, 0, 0.2), transparent 40%),
-                radial-gradient(circle at 80% 0%, rgba(0, 224, 255, 0.25), transparent 35%),
-                linear-gradient(140deg, var(--bg-a), var(--bg-b));
-            z-index: 200;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-
-        .loader-page.is-hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loader-card {
-            width: min(700px, 100%);
-            border: 6px solid var(--frame);
-            background: rgba(0, 0, 0, 0.75);
-            box-shadow: 10px 10px 0 #000;
-            padding: 20px;
-        }
-
-        h1 {
-            margin: 0 0 12px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: clamp(20px, 4.2vw, 34px);
-            line-height: 1.35;
-            color: var(--accent);
-            text-align: center;
-        }
-
-        p {
-            margin: 0 0 18px;
-            font-size: clamp(22px, 3.4vw, 30px);
-            letter-spacing: 0.8px;
-        }
-
-        .progress-wrap {
-            width: 100%;
-            height: 22px;
-            border: 4px solid #000;
-            background: #211036;
-            box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-2));
-            transition: width 0.2s ease;
-        }
-
-        .meta {
-            margin-top: 14px;
-            display: flex;
-            justify-content: space-between;
-            gap: 12px;
-            font-size: clamp(22px, 3vw, 28px);
-        }
-
-        .status {
-            margin-top: 10px;
-            min-height: 28px;
-            font-size: clamp(20px, 2.8vw, 26px);
-            opacity: 0.95;
-            text-align: center;
-        }
-
-        .error {
-            color: #ff9f9f;
-        }
-
-        .app-shell {
-            position: fixed;
-            inset: 0;
-            z-index: 10;
-            background: #000;
-        }
-
-        .view {
-            position: absolute;
-            inset: 0;
-            opacity: 0;
-            transition: opacity 0.75s ease;
-            pointer-events: none;
-        }
-
-        .view.is-active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .intro-container {
-            position: relative;
-            width: 100vw;
-            height: 100dvh;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .intro-container video {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            height: 100dvh;
-            width: auto;
-            z-index: 0;
-            opacity: 1;
-            transition: opacity 0.24s linear;
-        }
-
-        #intro-transition-video {
-            display: block;
-            z-index: 10;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 12;
-            opacity: 1;
-            transition: opacity 0.35s ease;
-        }
-
-        .overlay.is-fading-out {
-            opacity: 0;
-        }
-
-        .btn-start {
-            font-family: 'Press Start 2P', cursive;
-            padding: 20px 40px;
-            background: #ffcc00;
-            border: 6px solid #000;
-            box-shadow: 8px 8px 0 #8b0000;
-            cursor: pointer;
-            color: #000;
-            font-size: 24px;
-            transition: 0.2s;
-        }
-
-        .btn-start:hover { transform: scale(1.1); background: #fff; }
-
-        .principal-root {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            background: #000;
-        }
-
-        .audio-status-indicator {
-            position: fixed;
-            right: 16px;
-            bottom: 16px;
-            width: 42px;
-            height: 42px;
-            z-index: 250;
-            user-select: none;
-            filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
-            border: 3px solid rgba(255, 255, 255, 0.18);
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 4px;
-            cursor: pointer;
-            transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
-            box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
-        }
-
-        .audio-status-indicator:hover,
-        .audio-status-indicator:focus-visible {
-            transform: scale(1.08);
-            border-color: rgba(255, 204, 0, 0.92);
-            background: rgba(20, 20, 20, 0.8);
-            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.18);
-            outline: none;
-        }
-
-        .audio-status-indicator:active {
-            transform: scale(1.02);
-            border-color: rgba(255, 255, 255, 0.92);
-        }
-
-        .audio-status-indicator img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-        }
-        
-        .cembe-nav-btn {
-            --cembe-angle: 0deg;
-            position: fixed;
-            left: 16px;
-            bottom: 16px;
-            width: 84px;
-            height: 84px;
-            z-index: 250;
-            user-select: none;
-            filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.75));
-            border: 4px solid rgba(255, 255, 255, 0.24);
-            border-radius: 14px;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 8px;
-            cursor: pointer;
-            overflow: visible;
-            animation: cembe-float 2.2s ease-in-out infinite;
-            transition: left 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), bottom 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), transform 1.3s cubic-bezier(0.25, 0.8, 0.25, 1), border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, opacity 0.2s ease, filter 0.16s ease;
-            box-shadow: 0 0 0 0 rgba(255, 204, 0, 0);
-        }
-
-        .cembe-nav-btn::before {
-            content: '';
-            position: absolute;
-            inset: -6px;
-            border-radius: 18px;
-            padding: 4px;
-            background: conic-gradient(
-                from var(--cembe-angle),
-                #ff2d55,
-                #ff9500,
-                #ffd60a,
-                #32d74b,
-                #0a84ff,
-                #bf5af2,
-                #ff2d55
-            );
-            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .cembe-nav-btn.is-hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .cembe-nav-btn:hover,
-        .cembe-nav-btn:focus-visible {
-            transform: scale(1.08);
-            border-color: rgba(255, 204, 0, 0.92);
-            background: rgba(20, 20, 20, 0.8);
-            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.18);
-            outline: none;
-            animation-play-state: paused;
-        }
-
-        .cembe-nav-btn:active {
-            transform: scale(1.02);
-            border-color: rgba(255, 255, 255, 0.92);
-        }
-
-        .cembe-nav-btn.is-launching {
-            animation: none;
-            left: 50%;
-            bottom: 50%;
-            transform: translate(-50%, 50%) scale(1.35);
-            filter: drop-shadow(0 0 14px rgba(255, 230, 120, 0.95));
-            border-color: rgba(255, 255, 255, 0.9);
-        }
-
-        .cembe-nav-btn.is-launching::before {
-            opacity: 1;
-            animation: cembe-rainbow-shift 0.7s linear infinite;
-        }
-
-        .cembe-nav-btn img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-        }
-
-        @keyframes cembe-float {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-            100% { transform: translateY(0); }
-        }
-
-        @keyframes cembe-rainbow-shift {
-            from { --cembe-angle: 0deg; }
-            to { --cembe-angle: 360deg; }
-        }
-
-        @property --cembe-angle {
-            syntax: '<angle>';
-            inherits: false;
-            initial-value: 0deg;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/shell.css">
+    <link rel="stylesheet" href="assets/css/principal.css">
 </head>
 <body>
     <main class="loader-page" id="loader-page">
@@ -383,6 +54,7 @@
                     <div data-component="media-shell"></div>
                     <div data-component="confirm-dialog"></div>
                     <div data-component="final-screen"></div>
+                    <div data-component="cembe-view"></div>
                 </div>
             </div>
         </section>
@@ -393,6 +65,9 @@
     </audio>
     <audio id="intro-bg-birds" preload="auto" loop>
         <source data-asset-original-src="assets/videos/aves_16.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="cembe-bg-music" preload="auto" loop>
+        <source data-asset-original-src="assets/videos/pumpup.mp3" type="audio/mpeg">
     </audio>
 
     <button class="audio-status-indicator" id="audio-status-button" type="button" aria-label="Activar sonido" aria-pressed="false">
@@ -406,8 +81,10 @@
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="components/loader.js"></script>
     <script src="assets/js/intro-audio.js"></script>
+    <script src="assets/js/audio-status-button.js"></script>
     <script src="assets/js/principal-back-guard.js"></script>
     <script src="assets/js/principal-customs-data.js"></script>
+    <script src="assets/js/resource-manifest.js"></script>
     <script src="assets/js/principal-bg-video.js"></script>
     <script src="assets/js/principal-app.js"></script>
     <script>
@@ -423,75 +100,35 @@
         const introTransitionVideo = document.getElementById('intro-transition-video');
         const globalBgMusic = document.getElementById('global-bg-music');
         const introBgBirds = document.getElementById('intro-bg-birds');
+        const cembeBgMusic = document.getElementById('cembe-bg-music');
         const audioStatusButton = document.getElementById('audio-status-button');
         const audioStatusIcon = document.getElementById('audio-status-icon');
         const cembeNavButton = document.getElementById('cembe-nav-button');
+        const cembeView = document.getElementById('cembe-view');
         const btnStart = document.getElementById('btn-start');
 
-        const AUDIO_ICON_MUTE = 'assets/favicon/vol-mute.png';
-        const AUDIO_ICON_PLAY = 'assets/favicon/vol-play.png';
-        let audioMutedByUser = false;
-
-        function isAudioElementPlaying(audioEl) {
-            return !!audioEl && !audioEl.paused && !audioEl.ended && audioEl.readyState > 1;
-        }
-
-        function updateAudioStatusIcon() {
-            if (!audioStatusIcon) return;
-
-            const isAnyAudioPlaying = !audioMutedByUser && (
-                isAudioElementPlaying(introBgBirds) || isAudioElementPlaying(globalBgMusic)
-            );
-            const nextIcon = isAnyAudioPlaying ? AUDIO_ICON_PLAY : AUDIO_ICON_MUTE;
-
-            if (audioStatusIcon.getAttribute('src') !== nextIcon) {
-                audioStatusIcon.setAttribute('src', nextIcon);
+        // El controller decide qué pista reanudar (aves, música principal o CEMBE)
+        // según la vista activa en el momento en que el usuario reactiva el sonido.
+        const audioStatusController = window.FinalBdayAudioStatusButton.createController({
+            buttonEl: audioStatusButton,
+            iconEl: audioStatusIcon,
+            audioElements: [introBgBirds, globalBgMusic, cembeBgMusic],
+            iconMutedSrc: 'assets/favicon/vol-mute.png',
+            iconPlaySrc: 'assets/favicon/vol-play.png',
+            onResume: function () {
+                if (cembeView && cembeView.classList.contains('is-visible')) {
+                    cembeBgMusic.play().catch(() => {});
+                } else if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {
+                    introAudio.startGlobalBackgroundMusic();
+                } else {
+                    introAudio.startIntroBirdsMusic();
+                }
             }
-
-            if (audioStatusButton) {
-                audioStatusButton.setAttribute('aria-label', isAnyAudioPlaying ? 'Silenciar sonido' : 'Activar sonido');
-                audioStatusButton.setAttribute('aria-pressed', isAnyAudioPlaying ? 'true' : 'false');
-            }
-        }
-
-        function setAudioMutedState(shouldMute) {
-            audioMutedByUser = shouldMute;
-            introBgBirds.muted = shouldMute;
-            globalBgMusic.muted = shouldMute;
-
-            if (shouldMute) {
-                introBgBirds.pause();
-                globalBgMusic.pause();
-                updateAudioStatusIcon();
-                return;
-            }
-
-            if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {
-                introAudio.startGlobalBackgroundMusic();
-            } else {
-                introAudio.startIntroBirdsMusic();
-            }
-
-            updateAudioStatusIcon();
-        }
-
-        [introBgBirds, globalBgMusic].forEach((audioEl) => {
-            if (!audioEl) return;
-            audioEl.addEventListener('play', updateAudioStatusIcon);
-            audioEl.addEventListener('playing', updateAudioStatusIcon);
-            audioEl.addEventListener('pause', updateAudioStatusIcon);
-            audioEl.addEventListener('ended', updateAudioStatusIcon);
-            audioEl.addEventListener('emptied', updateAudioStatusIcon);
-            audioEl.addEventListener('waiting', updateAudioStatusIcon);
         });
 
-        if (audioStatusButton) {
-            audioStatusButton.addEventListener('click', () => {
-                setAudioMutedState(!audioMutedByUser);
-            });
-        }
-
-        updateAudioStatusIcon();
+        // Expuesto para que principal-app.js pueda consultar si el usuario
+        // silenció el sonido antes de reanudar la pista de CEMBE.
+        window.FinalBdayAppAudioController = audioStatusController;
 
         window.__FB_LOADER_OPTIONS = {
             stripParentPrefix: true,
@@ -788,120 +425,13 @@
             }
         }
 
-        function isValidResourcePath(path) {
-            if (!path) return false;
-            if (path.startsWith('data:')) return false;
-            if (path.startsWith('javascript:')) return false;
-            if (path.startsWith('#')) return false;
-            return true;
-        }
-
-        function extractResourceUrls(text, baseUrl) {
-            const urls = new Set();
-            const attrRegex = /(src|href)=["']([^"']+)["']/gi;
-            const assetRegex = /["'](\.\.\/assets\/[^"']+)["']/gi;
-            const componentRegex = /["'](\.\.\/components\/[^"']+)["']/gi;
-
-            let match;
-            while ((match = attrRegex.exec(text)) !== null) {
-                const raw = match[2].trim();
-                if (!isValidResourcePath(raw)) continue;
-                if (raw.indexOf('${') !== -1) continue;
-                urls.add(new URL(raw, baseUrl).href);
-            }
-
-            while ((match = assetRegex.exec(text)) !== null) {
-                const rawAsset = match[1].trim();
-                if (rawAsset.indexOf('${') !== -1) continue;
-                urls.add(new URL(rawAsset, baseUrl).href);
-            }
-
-            while ((match = componentRegex.exec(text)) !== null) {
-                const rawComponent = match[1].trim();
-                if (rawComponent.indexOf('${') !== -1) continue;
-                urls.add(new URL(rawComponent, baseUrl).href);
-            }
-
-            return urls;
-        }
-
-        async function discoverResources() {
-            const pages = [
-                'pages/app_intro.html',
-                'pages/app_principal.html'
-            ];
-
-            const resources = new Set([
-                new URL('assets/videos/aves_16.mp3', location.href).href,
-                new URL('assets/favicon/favicon.ico', location.href).href,
-                new URL('components/loader.js', location.href).href,
-                new URL('components/app-controls.html', location.href).href,
-                new URL('components/app-media-shell.html', location.href).href,
-                new URL('components/app-confirm-dialog.html', location.href).href,
-                new URL('components/app-final-screen.html', location.href).href,
-                new URL('assets/videos/video_movil.mp4', location.href).href,
-                new URL('assets/videos/video_escritorio.mp4', location.href).href,
-                new URL('assets/videos/zoom_movil.mp4', location.href).href,
-                new URL('assets/videos/zoom_escritorio.mp4', location.href).href,
-                new URL('assets/videos/interior_student_cafe.mp3', location.href).href,
-                new URL('pages/app_principal.html', location.href).href
-            ]);
-
-            for (const pagePath of pages) {
-                const pageUrl = new URL(pagePath, location.href);
-                const response = await fetch(pageUrl.href, { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error('No se pudo leer ' + pagePath + ' (' + response.status + ')');
-                }
-
-                const text = await response.text();
-                const found = extractResourceUrls(text, pageUrl.href);
-                for (const url of found) {
-                    resources.add(url);
-                }
-
-                if (pagePath === 'pages/app_principal.html') {
-                    // Los archivos de customs ahora viven en el módulo
-                    // principal-customs-data.js (ya cargado como <script>).
-                    // Usamos la API directamente en lugar de parsear el HTML.
-                    if (window.FinalBdayCustomsData && typeof window.FinalBdayCustomsData.getData === 'function') {
-                        const customsData = window.FinalBdayCustomsData.getData();
-                        for (const item of Object.values(customsData)) {
-                            if (item.file) {
-                                resources.add(new URL('assets/customs/' + item.file, location.href).href);
-                            }
-                        }
-                    }
-
-                    // Videos de fondo del principal: ya no están inline en el
-                    // HTML, así que los añadimos explícitamente.
-                    const bgVideos = [
-                        'assets/videos/disco_movil.mp4',
-                        'assets/videos/bar1-movil.mp4',
-                        'assets/videos/bar2-movil.mp4'
-                    ];
-                    for (const v of bgVideos) {
-                        resources.add(new URL(v, location.href).href);
-                    }
-                }
-            }
-
-            const sameOriginResources = [];
-            for (const url of resources) {
-                try {
-                    const parsed = new URL(url);
-                    if (parsed.origin === location.origin) {
-                        if (parsed.href.indexOf('${') !== -1 || parsed.href.indexOf('%7B') !== -1) {
-                            continue;
-                        }
-                        sameOriginResources.push(parsed.href);
-                    }
-                } catch (e) {
-                    console.warn('URL ignorada:', url, e);
-                }
-            }
-
-            return sameOriginResources;
+        // El descubrimiento de recursos ahora es estático: ver
+        // assets/js/resource-manifest.js (Fase 6 del refactor). Antes esta
+        // función hacía fetch + regex sobre pages/app_intro.html y
+        // pages/app_principal.html en tiempo de ejecución para averiguar
+        // qué precargar; ya no hace falta ninguna de esas dos páginas.
+        function discoverResources() {
+            return window.FinalBdayResourceManifest.build();
         }
 
         async function preloadAppResources(options) {
@@ -1027,38 +557,13 @@
             await Promise.all(workers);
         }
 
-        function extractPrincipalStyle(pageHtml) {
-            const styleMatch = pageHtml.match(/<style>([\s\S]*?)<\/style>/i);
-            if (!styleMatch) return '';
-            return styleMatch[1];
-        }
-
         async function initPrincipalApp() {
             if (principalInitPromise) return principalInitPromise;
 
             principalInitPromise = (async () => {
-                const cachedPageHtml = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.getText === 'function'
-                    ? window.FinalBdayAssetCache.getText('pages/app_principal.html')
-                    : '';
-
-                let pageHtml = cachedPageHtml;
-                if (!pageHtml) {
-                    const pageResponse = await fetch('pages/app_principal.html', { cache: 'no-store' });
-                    if (!pageResponse.ok) {
-                        throw new Error('No se pudo leer pages/app_principal.html (' + pageResponse.status + ')');
-                    }
-
-                    pageHtml = await pageResponse.text();
-                }
-
-                const principalStyle = extractPrincipalStyle(pageHtml);
-                if (principalStyle) {
-                    const styleTag = document.createElement('style');
-                    styleTag.id = 'principal-inline-style';
-                    styleTag.textContent = principalStyle.replace(/\.\.\/assets\//g, 'assets/');
-                    document.head.appendChild(styleTag);
-                }
-
+                // El CSS de la vista principal ya se sirve como assets/css/principal.css
+                // (Fase 5 del refactor). Ya no hace falta leer pages/app_principal.html
+                // ni extraer su <style> por regex en tiempo de ejecución.
                 if (!window.FinalBdayPrincipalApp || typeof window.FinalBdayPrincipalApp.init !== 'function') {
                     throw new Error('No se pudo inicializar assets/js/principal-app.js');
                 }
@@ -1094,19 +599,16 @@
                 return;
             }
 
-            const currentPath = window.location.pathname + window.location.search + window.location.hash;
-            sessionStorage.setItem('fb-cembe-return-url', currentPath);
-            if (window.FinalBdayBackGuard && typeof window.FinalBdayBackGuard.allowNextUnload === 'function') {
-                window.FinalBdayBackGuard.allowNextUnload();
-            }
-
             if (cembeNavButton) {
                 cembeNavButton.classList.add('is-launching');
                 cembeNavButton.setAttribute('aria-disabled', 'true');
             }
 
             setTimeout(() => {
-                window.location.href = 'pages/app_cembe.html';
+                if (window.FinalBdayPrincipalApp && typeof window.FinalBdayPrincipalApp.showCembeView === 'function') {
+                    window.FinalBdayPrincipalApp.showCembeView();
+                }
+                resetCembeNavButtonState();
             }, 2000);
         }
 

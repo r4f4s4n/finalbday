@@ -1,5 +1,6 @@
 (function () {
     let initPromise = null;
+    let cembeViewApi = null;
 
     function isLegacyPagesContext() {
         return /\/pages\//.test(window.location.pathname);
@@ -27,7 +28,8 @@
         '[data-component="controls"]': projectPath('components/app-controls.html'),
         '[data-component="media-shell"]': projectPath('components/app-media-shell.html'),
         '[data-component="confirm-dialog"]': projectPath('components/app-confirm-dialog.html'),
-        '[data-component="final-screen"]': projectPath('components/app-final-screen.html')
+        '[data-component="final-screen"]': projectPath('components/app-final-screen.html'),
+        '[data-component="cembe-view"]': projectPath('components/app-cembe-view.html')
     });
 	
 		window.FinalBdayBackGuard.enable();
@@ -92,13 +94,20 @@ const wrapper = document.getElementById('slides-wrapper');
 let suppressSlideActivationUntil = 0;
 let lastTouchZoomActivationAt = 0;
 
-function suppressSlideActivation(duration = 400) {
+function suppressSlideActivation(duration = 600) {
     suppressSlideActivationUntil = Date.now() + duration;
 }
 
 function shouldSuppressSlideActivation() {
+    // Mientras el overlay de zoom esté visible se suprime siempre la
+    // activación del slide, además de una ventana de tiempo tras abrir/cerrar
+    // (red de seguridad para el instante justo después de cerrar).
+    if (zoomOverlayController.overlay.classList.contains('is-visible')) {
+        return true;
+    }
     return Date.now() < suppressSlideActivationUntil;
 }
+
 
 function createZoomIconImage(isMinus) {
     const iconPath = isMinus
@@ -134,6 +143,9 @@ function createZoomOverlay() {
 
     overlay.addEventListener('click', (event) => {
         if (event.target === overlay) {
+            event.preventDefault();
+            event.stopPropagation();
+            suppressSlideActivation();
             close();
         }
     });
@@ -490,6 +502,10 @@ const finalPreviewBox = document.getElementById('final-preview-box');
 const finalTextBox = document.getElementById('final-text-box');
 const btnBack = document.getElementById('btn-back');
 const cembeNavButton = document.getElementById('cembe-nav-button');
+const cembeView = document.getElementById('cembe-view');
+const cembeBackBtn = document.getElementById('cembe-back-btn');
+const cembeBgMusic = document.getElementById('cembe-bg-music');
+const globalBgMusic = document.getElementById('global-bg-music');
 const bgVideoA = document.getElementById('app-bg-video');
 const bgVideoB = document.getElementById('app-bg-video-alt');
 
@@ -507,13 +523,48 @@ const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
     finalVideo: BG_VIDEO_FINAL
 });
 
-swiper.on('click', (s, event) => {
+// Detección propia de "tap/click real" sobre el slide activo, en vez de
+// depender del evento 'click' que emite Swiper. Se comprobó (con grep) que
+// esta era la única vía en todo el código que abría el diálogo de
+// confirmación, y aun así el diálogo seguía apareciendo de forma fantasma
+// tras cerrar el zoom en desktop pese a varias capas de supresión sobre el
+// click de Swiper. En vez de seguir intentando filtrar/suprimir ese evento,
+// dejamos de escucharlo por completo: aquí medimos nosotros mismos la
+// distancia y el tiempo entre pointerdown y pointerup para distinguir un tap
+// real de un arrastre (igual que hace Swiper internamente, pero de forma
+// propia y controlada), así el diálogo ya no puede depender de ningún click
+// interno/tardío de Swiper.
+let slideTapStartX = 0;
+let slideTapStartY = 0;
+let slideTapStartTime = 0;
+const SLIDE_TAP_MOVE_THRESHOLD = 10;
+const SLIDE_TAP_TIME_THRESHOLD = 500;
+
+wrapper.addEventListener('pointerdown', (event) => {
+    slideTapStartX = event.clientX;
+    slideTapStartY = event.clientY;
+    slideTapStartTime = Date.now();
+});
+
+wrapper.addEventListener('pointerup', (event) => {
+    if (event.target.closest('.slide-zoom-btn')) {
+        return;
+    }
+
     if (shouldSuppressSlideActivation()) {
         return;
     }
 
+    const dx = Math.abs(event.clientX - slideTapStartX);
+    const dy = Math.abs(event.clientY - slideTapStartY);
+    const dt = Date.now() - slideTapStartTime;
+
+    if (dx > SLIDE_TAP_MOVE_THRESHOLD || dy > SLIDE_TAP_MOVE_THRESHOLD || dt > SLIDE_TAP_TIME_THRESHOLD) {
+        return;
+    }
+
     const clickedActiveSlide = event.target.closest('.swiper-slide-active');
-    
+
     if (clickedActiveSlide) {
         const customId = clickedActiveSlide.getAttribute('data-id');
         const selectedCustom = customsData[customId];
@@ -584,12 +635,86 @@ btnBack.addEventListener('click', () => {
 
     swiper.update();
 });
+
+function isAppAudioMuted() {
+    return !!(window.FinalBdayAppAudioController && window.FinalBdayAppAudioController.isMuted());
+}
+
+function showCembeView() {
+    if (!cembeView) return;
+
+    mainSwiperEl.style.display = 'none';
+    mainGridEl.style.display = 'none';
+    document.getElementById('select-container').style.opacity = '0';
+    document.getElementById('select-container').style.pointerEvents = 'none';
+    diceBtn.style.opacity = '0';
+    diceBtn.style.pointerEvents = 'none';
+
+    if (cembeNavButton) {
+        cembeNavButton.classList.add('is-hidden');
+    }
+
+    cembeView.classList.add('is-visible');
+
+    if (globalBgMusic) {
+        globalBgMusic.pause();
+    }
+
+    if (cembeBgMusic && !isAppAudioMuted()) {
+        cembeBgMusic.currentTime = 0;
+        cembeBgMusic.play().catch(() => {});
+    }
+}
+
+function hideCembeView() {
+    if (!cembeView) return;
+
+    cembeView.classList.remove('is-visible');
+
+    if (cembeBgMusic) {
+        cembeBgMusic.pause();
+    }
+
+    if (globalBgMusic && !isAppAudioMuted()) {
+        globalBgMusic.play().catch(() => {});
+    }
+
+    mainSwiperEl.style.display = 'block';
+    mainSwiperEl.style.opacity = '1';
+    mainSwiperEl.style.pointerEvents = 'auto';
+
+    document.getElementById('select-container').style.opacity = '1';
+    document.getElementById('select-container').style.pointerEvents = 'auto';
+    diceBtn.style.opacity = '1';
+    diceBtn.style.pointerEvents = 'auto';
+
+    if (cembeNavButton) {
+        cembeNavButton.classList.remove('is-hidden');
+    }
+
+    swiper.update();
+}
+
+if (cembeBackBtn) {
+    cembeBackBtn.addEventListener('click', hideCembeView);
+}
+
+cembeViewApi = {
+    showCembeView: showCembeView,
+    hideCembeView: hideCembeView
+};
         })();
 
         return initPromise;
     }
 
     window.FinalBdayPrincipalApp = {
-        init: init
+        init: init,
+        showCembeView: function () {
+            if (cembeViewApi) cembeViewApi.showCembeView();
+        },
+        hideCembeView: function () {
+            if (cembeViewApi) cembeViewApi.hideCembeView();
+        }
     };
 })();
