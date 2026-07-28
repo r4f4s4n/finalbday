@@ -91,6 +91,7 @@ const order = isFirstPrincipalVisit
     ? moveIdToFront(shuffledOrder, startCustomId)
     : shuffledOrder;
 const wrapper = document.getElementById('slides-wrapper');
+const swiperCategoryTag = document.getElementById('swiper-category-tag');
 let suppressSlideActivationUntil = 0;
 let lastTouchZoomActivationAt = 0;
 
@@ -202,6 +203,7 @@ function forceStartApp() {
     swiper.loopDestroy();
     swiper.loopCreate();
     swiper.update();
+    syncSwiperCategoryTag();
 }
     
 // Construye el nodo DOM de una slide a partir de su id.
@@ -291,6 +293,10 @@ const swiper = new Swiper('.swiper', {
     grabCursor: true,           
 });
 
+swiper.on('slideChange', syncSwiperCategoryTag);
+swiper.on('transitionEnd', syncSwiperCategoryTag);
+swiper.on('resize', syncSwiperCategoryTag);
+
 forceStartApp();
 
 // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
@@ -332,6 +338,7 @@ function rebuildSwiperSlides(ids) {
     }
 
     currentSwiperIds = ids;
+    syncSwiperCategoryTag();
 }
 
 // Lleva el swiper a un índice concreto, funcione o no el loop en ese momento.
@@ -341,6 +348,8 @@ function goToSlideIndex(index, speed = 0) {
     } else {
         swiper.slideTo(index, speed);
     }
+
+    syncSwiperCategoryTag();
 }
 
 // Devuelve el id (custom) del slide actualmente activo/centrado.
@@ -349,6 +358,61 @@ function getActiveSlideId() {
     if (!activeSlide) return null;
     const idAttr = activeSlide.getAttribute('data-id');
     return idAttr !== null ? parseInt(idAttr) : null;
+}
+
+function getActiveSlideData() {
+    const activeSlideId = getActiveSlideId();
+    if (activeSlideId === null) return null;
+
+    return customsData[activeSlideId] || null;
+}
+
+function shouldShowSwiperCategoryTag() {
+    return !select || select.value === 'all';
+}
+
+function hideSwiperCategoryTag() {
+    if (!swiperCategoryTag) return;
+
+    swiperCategoryTag.classList.remove('is-visible');
+    swiperCategoryTag.textContent = '';
+}
+
+function positionSwiperCategoryTag() {
+    if (!swiperCategoryTag || !mainSwiperEl) return;
+
+    if (!shouldShowSwiperCategoryTag()) {
+        hideSwiperCategoryTag();
+        return;
+    }
+
+    const activeSlide = swiper.slides[swiper.activeIndex];
+    const activeData = getActiveSlideData();
+
+    if (!activeSlide || !activeData || mainSwiperEl.style.display === 'none' || mainSwiperEl.getBoundingClientRect().width === 0) {
+        hideSwiperCategoryTag();
+        return;
+    }
+
+    swiperCategoryTag.textContent = `${activeData.year} - ${activeData.category.toUpperCase()}`;
+    swiperCategoryTag.classList.add('is-visible');
+
+    const rootEl = document.querySelector('.principal-root');
+    if (!rootEl) return;
+
+    const slideRect = activeSlide.getBoundingClientRect();
+    const rootRect = rootEl.getBoundingClientRect();
+    const tagOffsetFromSlide = -2;
+
+    const left = Math.max(12, slideRect.right - rootRect.left - swiperCategoryTag.offsetWidth + 10);
+    const top = Math.max(0, slideRect.top - rootRect.top - swiperCategoryTag.offsetHeight + tagOffsetFromSlide);
+
+    swiperCategoryTag.style.left = `${left}px`;
+    swiperCategoryTag.style.top = `${top}px`;
+}
+
+function syncSwiperCategoryTag() {
+    requestAnimationFrame(positionSwiperCategoryTag);
 }
 
 const select = document.getElementById('year-select');
@@ -429,6 +493,8 @@ function buildGridItem(id, data) {
         if (targetSlideIndex !== -1) {
             goToSlideIndex(targetSlideIndex, 0);
         }
+
+        syncSwiperCategoryTag();
     });
 
     return gridItem;
@@ -472,10 +538,12 @@ select.addEventListener('change', (e) => {
             }
         }
         swiper.update();
+        syncSwiperCategoryTag();
     } else {
         mainSwiperEl.style.display = 'none';
         diceBtn.style.display = 'none';
         mainGridEl.style.display = 'block';
+        hideSwiperCategoryTag();
 
         updateGridVisibility(selectedYear);
     }
@@ -589,6 +657,7 @@ btnYes.addEventListener('click', () => {
     document.getElementById('select-container').style.pointerEvents = 'none';
     diceBtn.style.opacity = '0';
     diceBtn.style.pointerEvents = 'none';
+    hideSwiperCategoryTag();
 
     bgVideoController.hideFinalContent();
     bgVideoController.playBgTransition();
@@ -634,6 +703,7 @@ btnBack.addEventListener('click', () => {
     }
 
     swiper.update();
+    syncSwiperCategoryTag();
 });
 
 function isAppAudioMuted() {
@@ -649,6 +719,7 @@ function showCembeView() {
     document.getElementById('select-container').style.pointerEvents = 'none';
     diceBtn.style.opacity = '0';
     diceBtn.style.pointerEvents = 'none';
+    hideSwiperCategoryTag();
 
     if (cembeNavButton) {
         cembeNavButton.classList.add('is-hidden');
@@ -693,6 +764,7 @@ function hideCembeView() {
     }
 
     swiper.update();
+    syncSwiperCategoryTag();
 }
 
 if (cembeBackBtn) {

@@ -6,7 +6,7 @@
     4: { year: "2022", category: "La Historia", theme: "Gernika", file: "custom4.png", isWinner: true },
     5: { year: "2013", category: "Hospital", theme: "Manicomio", file: "custom5.png" },
     6: { year: "2015", category: "Los Grammys", theme: "Kurt Cobain", file: "custom6.png", isWinner: true },
-    7: { year: "2015", category: "Los Grammys", theme: "Britney Spears", file: "custom7.png" },
+    7: { year: "2015", category: "Los Grammys", theme: "Britney Spears la cantante", file: "custom7.png" },
     8: { year: "2015", category: "Los Grammys", theme: "Freddy Mercury", file: "custom8.png" },
     9: { year: "2015", category: "Los Grammys", theme: "La Pantoja", file: "custom9.png" },
     10: { year: "2015", category: "Los Grammys", theme: "Montserrat Caballé", file: "custom10.png" },
