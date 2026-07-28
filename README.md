@@ -56,13 +56,13 @@ Esta sección documenta el comportamiento actual que hoy se considera correcto y
 ### Arquitectura actual del flujo
 
 - La experiencia completa vive en `index.html`, que contiene cuatro estados dentro de una misma shell: precarga, intro, principal y CEMBE.
-- `app_cembe` es un componente integrado (`components/app-cembe-view.html`) que se muestra/oculta dentro de la propia vista principal, sin navegación de página completa.
+- `app_cembe` es un componente integrado (`components/principal/app-cembe-view.html`) que se muestra/oculta dentro de la propia vista principal, sin navegación de página completa.
 - La vista principal carga componentes HTML parciales para controles, media-shell, diálogo de confirmación, final-screen y la vista CEMBE.
 - Las antiguas páginas standalone (`pages/app_intro.html`, `pages/app_principal.html`, `pages/app_cembe.html`) ya no existen; todo el flujo vive en `index.html` y sus componentes/JS compartidos.
 
 ### Precarga actual
 
-- La precarga no solo carga recursos visibles inmediatos, sino que precarga una lista explícita de recursos definida en `assets/js/resource-manifest.js` (componentes, favicon, videos, audios) más todos los customs (obtenidos de `principal-customs-data.js`).
+- La precarga no solo carga recursos visibles inmediatos, sino que precarga una lista explícita de recursos definida en `assets/js/common/resource-manifest.js` (componentes, favicon, videos, audios) más todos los customs (obtenidos de `assets/js/principal/principal-customs-data.js`).
 - La precarga de recursos se hace con concurrencia limitada.
 - El audio `aves_16.mp3` se prioriza para cargarse antes que el resto de recursos multimedia.
 - En cuanto ese audio está disponible, la app intenta empezar a reproducirlo automáticamente.
@@ -150,7 +150,7 @@ Este flujo es la referencia funcional para el refactor.
 Las siguientes ideas de refactor, antes propuestas, ya se aplicaron:
 
 - `app_cembe` se convirtió en un componente integrado dentro de la vista principal, evitando la navegación de página completa.
-- Se eliminaron duplicidades de código (botón de audio unificado en `audio-status-button.js`, CSS de `principal` consolidado en `assets/css/principal.css`, resource manifest estático en lugar de escaneo por regex).
+- Se eliminaron duplicidades de código (botón de audio unificado en `audio-status-button.js`, CSS de `principal` consolidado en `assets/css/principal/principal.css`, resource manifest estático en lugar de escaneo por regex).
 - Se eliminaron las páginas standalone `pages/app_intro.html`, `pages/app_principal.html` y `pages/app_cembe.html`, ya sin ningún consumidor.
 
 Pendiente (no aplicado): definir una transición visual hacia CEMBE alineada con la transición del final-screen, para homogeneizar la experiencia.

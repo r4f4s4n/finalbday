@@ -1,0 +1,24 @@
+:root {
+    --bg-a: #07070f;
+    --bg-b: #1a0a2b;
+    --ink: #f4efe1;
+    --accent: #ffcc00;
+    --accent-2: #ff00ff;
+    --frame: #000000;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    color: var(--ink);
+    font-family: 'VT323', monospace;
+}

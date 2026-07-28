@@ -1,0 +1,36 @@
+/* Loader retro translúcido sobre la vista principal */
+
+.arcade-loader-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+    pointer-events: all;
+}
+
+.arcade-loader-text {
+    color: #ff00ff;
+    font-family: 'Helvetica', sans-serif;
+    font-weight: 900;
+    font-size: 32px;
+    text-shadow: 3px 3px 0 #000, 0 0 10px #ff00ff;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    animation: arcade-blink 0.8s steps(2, start) infinite;
+}
+
+@keyframes arcade-blink {
+    to {
+        visibility: hidden;
+    }
+}

@@ -8,25 +8,29 @@
     // NO se incluyen aquí: el propio navegador ya los carga vía la etiqueta
     // <script>, no necesitan pasar por este precache de blobs.
     const STATIC_RESOURCES = [
-        'assets/videos/aves_16.mp3',
-        'assets/favicon/favicon.ico',
-        'assets/favicon/cembeicon.png',
-        'assets/favicon/cembebg.png',
+        'assets/audios/aves_16.mp3',
+        'assets/icons/favicon.ico',
+        'assets/icons/cembeicon.png',
+        'assets/backgrounds/cembebg.png',
         'components/loader.js',
-        'components/app-controls.html',
-        'components/app-media-shell.html',
-        'components/app-confirm-dialog.html',
-        'components/app-final-screen.html',
-        'components/app-cembe-view.html',
-        'assets/videos/video_movil.mp4',
-        'assets/videos/video_escritorio.mp4',
-        'assets/videos/zoom_movil.mp4',
-        'assets/videos/zoom_escritorio.mp4',
-        'assets/videos/interior_student_cafe.mp3',
-        'assets/videos/pumpup.mp3',
-        'assets/videos/disco_movil.mp4',
-        'assets/videos/bar1-movil.mp4',
-        'assets/videos/bar2-movil.mp4'
+        'components/app-loader-view.html',
+        'components/app-intro-view.html',
+        'components/app-principal-view.html',
+        'components/app-global-audio-ui.html',
+        'components/principal/app-controls.html',
+        'components/principal/app-media-shell.html',
+        'components/principal/app-confirm-dialog.html',
+        'components/principal/app-final-screen.html',
+        'components/principal/app-cembe-view.html',
+        'assets/backgrounds/video_movil.mp4',
+        'assets/backgrounds/video_escritorio.mp4',
+        'assets/backgrounds/zoom_movil.mp4',
+        'assets/backgrounds/zoom_escritorio.mp4',
+        'assets/audios/interior_student_cafe.mp3',
+        'assets/audios/pumpup.mp3',
+        'assets/backgrounds/disco_movil.mp4',
+        'assets/backgrounds/bar1-movil.mp4',
+        'assets/backgrounds/bar2-movil.mp4'
     ];
 
     // Construye la lista final de URLs absolutas a precargar, añadiendo

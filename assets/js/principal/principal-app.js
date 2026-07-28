@@ -25,11 +25,11 @@
     }
 
     await loadComponents({
-        '[data-component="controls"]': projectPath('components/app-controls.html'),
-        '[data-component="media-shell"]': projectPath('components/app-media-shell.html'),
-        '[data-component="confirm-dialog"]': projectPath('components/app-confirm-dialog.html'),
-        '[data-component="final-screen"]': projectPath('components/app-final-screen.html'),
-        '[data-component="cembe-view"]': projectPath('components/app-cembe-view.html')
+        '[data-component="controls"]': projectPath('components/principal/app-controls.html'),
+        '[data-component="media-shell"]': projectPath('components/principal/app-media-shell.html'),
+        '[data-component="confirm-dialog"]': projectPath('components/principal/app-confirm-dialog.html'),
+        '[data-component="final-screen"]': projectPath('components/principal/app-final-screen.html'),
+        '[data-component="cembe-view"]': projectPath('components/principal/app-cembe-view.html')
     });
 	
 		window.FinalBdayBackGuard.enable();
@@ -111,8 +111,8 @@ function shouldSuppressSlideActivation() {
 
 function createZoomIconImage(isMinus) {
     const iconPath = isMinus
-        ? projectPath('assets/favicon/lupamenos.png')
-        : projectPath('assets/favicon/lupamas.png');
+        ? projectPath('assets/icons/lupamenos.png')
+        : projectPath('assets/icons/lupamas.png');
 
     return `<img src="${iconPath}" alt="" aria-hidden="true">`;
 }
@@ -224,7 +224,7 @@ function buildSlideNode(id) {
         : `<img class="custom-main-image" data-asset-original-src="${originalSrc}" src="${resolvedSrc}" alt="Custom">`;
 
     const winnerBadgeHTML = data.isWinner
-        ? `<div class="winner-badge"><img src="${projectPath('assets/favicon/torfeo.png')}" alt="Ganador"></div>`
+        ? `<div class="winner-badge"><img src="${projectPath('assets/icons/torfeo.png')}" alt="Ganador"></div>`
         : '';
 
     const zoomButtonHTML = `<button class="slide-zoom-btn" type="button" aria-label="Ver en pantalla completa">${createZoomIconImage(false)}</button>`;
@@ -374,7 +374,7 @@ const diceBtn = document.getElementById('random-dice');
 const diceBtnIcon = diceBtn ? diceBtn.querySelector('img') : null;
 
 if (diceBtnIcon) {
-    const diceIconOriginalSrc = projectPath('assets/favicon/dados.png');
+    const diceIconOriginalSrc = projectPath('assets/icons/dados.png');
     const diceIconResolvedSrc = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function'
         ? window.FinalBdayAssetCache.resolve(diceIconOriginalSrc)
         : diceIconOriginalSrc;
@@ -509,9 +509,9 @@ const globalBgMusic = document.getElementById('global-bg-music');
 const bgVideoA = document.getElementById('app-bg-video');
 const bgVideoB = document.getElementById('app-bg-video-alt');
 
-const BG_VIDEO_ORIGINAL = projectPath('assets/videos/disco_movil.mp4');
-const BG_VIDEO_TRANSITION = projectPath('assets/videos/bar1-movil.mp4');
-const BG_VIDEO_FINAL = projectPath('assets/videos/bar2-movil.mp4');
+const BG_VIDEO_ORIGINAL = projectPath('assets/backgrounds/disco_movil.mp4');
+const BG_VIDEO_TRANSITION = projectPath('assets/backgrounds/bar1-movil.mp4');
+const BG_VIDEO_FINAL = projectPath('assets/backgrounds/bar2-movil.mp4');
 
 const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
     finalTextBox: finalTextBox,

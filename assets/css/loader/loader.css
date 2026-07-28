@@ -1,0 +1,78 @@
+.loader-page {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 204, 0, 0.2), transparent 40%),
+        radial-gradient(circle at 80% 0%, rgba(0, 224, 255, 0.25), transparent 35%),
+        linear-gradient(140deg, var(--bg-a), var(--bg-b));
+    z-index: 200;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.loader-page.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader-card {
+    width: min(700px, 100%);
+    border: 6px solid var(--frame);
+    background: rgba(0, 0, 0, 0.75);
+    box-shadow: 10px 10px 0 #000;
+    padding: 20px;
+}
+
+.loader-card h1 {
+    margin: 0 0 12px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: clamp(20px, 4.2vw, 34px);
+    line-height: 1.35;
+    color: var(--accent);
+    text-align: center;
+}
+
+.loader-card p {
+    margin: 0 0 18px;
+    font-size: clamp(22px, 3.4vw, 30px);
+    letter-spacing: 0.8px;
+}
+
+.progress-wrap {
+    width: 100%;
+    height: 22px;
+    border: 4px solid #000;
+    background: #211036;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.2s ease;
+}
+
+.meta {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: clamp(22px, 3vw, 28px);
+}
+
+.status {
+    margin-top: 10px;
+    min-height: 28px;
+    font-size: clamp(20px, 2.8vw, 26px);
+    opacity: 0.95;
+    text-align: center;
+}
+
+.error {
+    color: #ff9f9f;
+}
