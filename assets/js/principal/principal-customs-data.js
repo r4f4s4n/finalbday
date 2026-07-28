@@ -126,7 +126,8 @@
     124: { year: "2022", category: "La Historia", theme: "Guerra Civil Española", file: "custom124.png" },
     125: { year: "2025", category: "Dibujitos", theme: "Pepe Bernáldez", file: "custom125.png" },
     126: { year: "2025", category: "Dibujitos", theme: "Aladdín", file: "custom126.png" },
-    127: { year: "2024", category: "Navidad", theme: "MEGATRÓN", file: "custom127.png" }
+    127: { year: "2024", category: "Navidad", theme: "MEGATRÓN", file: "custom127.mp4" },
+    128: { year: "2025", category: "Dibujitos", theme: "Chyrymoya Bayo", file: "custom128.png" }
     };
 
     function getData() {
