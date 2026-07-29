@@ -1,6 +1,18 @@
 (function () {
-    const PRELOAD_TIMEOUT_MS = 25000;
+    const BASE_PRELOAD_TIMEOUT_MS = 25000;
     const FAILED_PRELOAD_RETRY_MS = 15000;
+
+    function isLikelyMobileDevice() {
+        return window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    }
+
+    function getPreloadTimeoutMs() {
+        return isLikelyMobileDevice() ? 60000 : BASE_PRELOAD_TIMEOUT_MS;
+    }
+
+    function getMaxConcurrentPreloads() {
+        return isLikelyMobileDevice() ? 2 : 3;
+    }
 
     function createController(options) {
         const settings = options || {};
@@ -173,7 +185,7 @@
 
             try {
                 if (isBlobBackedAsset(pathname)) {
-                    const blob = await fetchResourceBlob(absoluteUrl, PRELOAD_TIMEOUT_MS);
+                    const blob = await fetchResourceBlob(absoluteUrl, getPreloadTimeoutMs());
                     const objectUrl = URL.createObjectURL(blob);
 
                     retainedPreloadedResources.set(absoluteUrl, {
@@ -214,7 +226,7 @@
 
         async function preloadAllResources(resourceUrls, options) {
             const cfg = options || {};
-            const maxConcurrent = 3;
+            const maxConcurrent = getMaxConcurrentPreloads();
             let index = 0;
 
             async function worker() {

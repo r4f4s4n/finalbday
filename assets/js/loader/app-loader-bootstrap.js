@@ -154,6 +154,32 @@ function waitMs(ms) {
     return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
+function isCustomResourceUrl(url) {
+    try {
+        const parsed = new URL(url, location.href);
+        return parsed.pathname.indexOf('/assets/customs/') !== -1;
+    } catch (error) {
+        return false;
+    }
+}
+
+function syncLoadedCustomCount() {
+    if (!window.FinalBdayAssetCache || !window.FinalBdayResourceManifest) {
+        return 0;
+    }
+
+    if (typeof window.FinalBdayResourceManifest.build !== 'function' || typeof window.FinalBdayAssetCache.has !== 'function') {
+        return 0;
+    }
+
+    const manifestResources = window.FinalBdayResourceManifest.build();
+    const customResources = manifestResources.filter((url) => isCustomResourceUrl(url));
+
+    return customResources.reduce((count, url) => {
+        return window.FinalBdayAssetCache.has(url) ? count + 1 : count;
+    }, 0);
+}
+
 async function initPrincipalApp() {
     if (principalInitPromise) return principalInitPromise;
 
@@ -324,24 +350,46 @@ async function boot() {
             updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
         }, 2000);
 
-        await assetPreload.preloadAppResources({
-            onCustomLoaded: () => {
-                loadedCustoms += 1;
+        try {
+            await assetPreload.preloadAppResources({
+                onCustomLoaded: () => {
+                    loadedCustoms += 1;
 
-                if (!simulationLockedToReal && loadedCustoms >= simulatedCustoms) {
-                    stopSimulation();
+                    if (!simulationLockedToReal && loadedCustoms >= simulatedCustoms) {
+                        stopSimulation();
+                    }
+
+                    updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
                 }
+            });
+        } catch (error) {
+            console.warn('Precarga no crítica con errores; continuamos con reintento en segundo plano.', error);
+        }
 
-                updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
+        loadedCustoms = syncLoadedCustomCount();
+
+        const failedResources = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.getFailedResources === 'function'
+            ? window.FinalBdayAssetCache.getFailedResources()
+            : [];
+        const failedCustomResources = failedResources.filter((resource) => isCustomResourceUrl(resource.url));
+
+        if (failedCustomResources.length > 0 && window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.retryFailed === 'function') {
+            updateProgress(getShownCustoms(), totalCustoms, 'Reintentando recursos pendientes...');
+            try {
+                await window.FinalBdayAssetCache.retryFailed();
+            } catch (error) {
+                console.warn('No se pudo completar el reintento inmediato de recursos pendientes.', error);
             }
-        });
+
+            loadedCustoms = syncLoadedCustomCount();
+        }
 
         stopSimulation();
 
         const elapsedMs = performance.now() - bootStartAt;
         const waitRemainingMs = POST_LOAD_WAIT_MS - elapsedMs;
         if (waitRemainingMs > 0) {
-            updateProgress(getShownCustoms(), totalCustoms, 'Ajustando escenario...');
+            updateProgress(getShownCustoms(), totalCustoms, 'Conectando cables...');
             await waitMs(waitRemainingMs);
         }
 
@@ -349,7 +397,7 @@ async function boot() {
             getShownCustoms(),
             totalCustoms,
             loadedCustoms >= totalCustoms
-                ? 'Todo listo. Entrando en intro...'
+                ? '¡Todo listo!'
                 : 'Carga inicial completa. Reintentando recursos pendientes en segundo plano...'
         );
         setTimeout(enterIntro, 250);
