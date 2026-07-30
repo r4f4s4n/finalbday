@@ -11,6 +11,7 @@
         'assets/audios/aves_16.mp3',
         'assets/icons/favicon.ico',
         'assets/icons/cembeicon.png',
+        'assets/icons/vol-play.png',
         'assets/backgrounds/cembebg.png',
         'components/loader.js',
         'components/app-loader-view.html',

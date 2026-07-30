@@ -45,6 +45,32 @@ function bindDomRefs() {
     btnStart = document.getElementById('btn-start');
 }
 
+function setupLoaderAudioUnlock() {
+    if (!loaderPage) return;
+
+    const eventNames = ['pointerdown', 'touchstart', 'mousedown', 'keydown'];
+
+    function detachListeners() {
+        eventNames.forEach(function (eventName) {
+            loaderPage.removeEventListener(eventName, onFirstUserGesture);
+        });
+    }
+
+    function onFirstUserGesture() {
+        detachListeners();
+
+        if (audioStatusController && audioStatusController.isMuted()) {
+            return;
+        }
+
+        introAudio.startIntroBirdsMusic();
+    }
+
+    eventNames.forEach(function (eventName) {
+        loaderPage.addEventListener(eventName, onFirstUserGesture, { passive: true });
+    });
+}
+
 function initAudioControllers() {
     introAudio = window.FinalBdayIntroAudio.createController({
         introBirdsEl: introBgBirds,
@@ -58,8 +84,12 @@ function initAudioControllers() {
         buttonEl: audioStatusButton,
         iconEl: audioStatusIcon,
         audioElements: [introBgBirds, globalBgMusic, cembeBgMusic],
+        initialMuted: false,
         iconMutedSrc: 'assets/icons/vol-mute.png',
         iconPlaySrc: 'assets/icons/vol-play.png',
+        onMute: function () {
+            introAudio.clearTimers();
+        },
         onResume: function () {
             const activeCembeView = document.getElementById('cembe-view');
             if (activeCembeView && activeCembeView.classList.contains('is-visible')) {
@@ -198,9 +228,57 @@ async function initPrincipalApp() {
     return principalInitPromise;
 }
 
+function hideLoaderWhenIntroReady() {
+    if (!loaderPage || !introBgVideo) {
+        if (loaderPage) {
+            loaderPage.classList.add('is-hidden');
+        }
+        return;
+    }
+
+    const settle = () => {
+        loaderPage.classList.add('is-hidden');
+    };
+
+    if (introBgVideo.readyState >= 2) {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(settle);
+        });
+        return;
+    }
+
+    let settled = false;
+    let fallbackTimeoutId = null;
+
+    const cleanup = () => {
+        introBgVideo.removeEventListener('loadeddata', onReady);
+        introBgVideo.removeEventListener('canplay', onReady);
+        introBgVideo.removeEventListener('playing', onReady);
+        if (fallbackTimeoutId !== null) {
+            clearTimeout(fallbackTimeoutId);
+            fallbackTimeoutId = null;
+        }
+    };
+
+    const onReady = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        requestAnimationFrame(() => {
+            requestAnimationFrame(settle);
+        });
+    };
+
+    introBgVideo.addEventListener('loadeddata', onReady);
+    introBgVideo.addEventListener('canplay', onReady);
+    introBgVideo.addEventListener('playing', onReady);
+    fallbackTimeoutId = setTimeout(onReady, 450);
+}
+
 function enterIntro() {
-    loaderPage.classList.add('is-hidden');
     introView.classList.add('is-active');
+    introBgVideo.play().catch(() => {});
+    hideLoaderWhenIntroReady();
     appReady = true;
     introAudio.startIntroBirdsMusic();
     if (cembeNavButton) {
@@ -310,6 +388,7 @@ async function boot() {
         await loadTopLevelViews();
         bindDomRefs();
         initAudioControllers();
+        setupLoaderAudioUnlock();
         setupUiEvents();
         const assetPreload = getPreloadController();
 

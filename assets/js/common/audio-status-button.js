@@ -4,10 +4,11 @@
     }
 
     // Controller genérico para el botón único de audio (mute/unmute) de la app.
-    // Gestiona N elementos <audio> a la vez: el icono/estado se calcula a partir
-    // de si CUALQUIERA de ellos está sonando. Quién debe reanudarse al desactivar
-    // el mute lo decide quien instancia el controller (onResume), porque solo el
-    // llamador sabe qué pista corresponde a la vista activa en ese momento.
+    // Antes de la primera acción explícita del usuario, el estado visual refleja
+    // si realmente hay audio sonando. A partir del primer click, el feedback del
+    // botón sigue inmediatamente la intención del usuario. Quién debe reanudarse
+    // al desactivar el mute lo decide quien instancia el controller (onResume),
+    // porque solo el llamador sabe qué pista corresponde a la vista activa.
     function createController(options) {
         const settings = options || {};
         const buttonEl = settings.buttonEl || null;
@@ -18,30 +19,34 @@
         const onResume = typeof settings.onResume === 'function' ? settings.onResume : function () {};
         const onMute = typeof settings.onMute === 'function' ? settings.onMute : function () {};
 
-        let isMutedByUser = false;
+        let isMutedByUser = settings.initialMuted === true;
+        let hasExplicitUserAction = false;
 
         function isAnyAudioPlaying() {
-            return !isMutedByUser && audioElements.some(isAudioElementPlaying);
+            return audioElements.some(isAudioElementPlaying);
         }
 
-        function updateIcon() {
-            if (!iconEl) return;
+        function syncButtonState() {
+            const soundEnabled = hasExplicitUserAction ? !isMutedByUser : isAnyAudioPlaying();
+            const nextSrc = soundEnabled ? iconPlaySrc : iconMutedSrc;
 
-            const playing = isAnyAudioPlaying();
-            const nextSrc = playing ? iconPlaySrc : iconMutedSrc;
-
-            if (iconEl.getAttribute('src') !== nextSrc) {
+            if (iconEl && iconEl.getAttribute('src') !== nextSrc) {
                 iconEl.setAttribute('src', nextSrc);
             }
 
             if (buttonEl) {
-                buttonEl.setAttribute('aria-label', playing ? 'Silenciar sonido' : 'Activar sonido');
-                buttonEl.setAttribute('aria-pressed', playing ? 'true' : 'false');
+                buttonEl.setAttribute('aria-label', soundEnabled ? 'Silenciar sonido' : 'Activar sonido');
+                buttonEl.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
             }
+        }
+
+        function updateIcon() {
+            syncButtonState();
         }
 
         function setMuted(shouldMute) {
             isMutedByUser = shouldMute;
+            hasExplicitUserAction = true;
 
             audioElements.forEach(function (audioEl) {
                 audioEl.muted = shouldMute;
@@ -56,7 +61,7 @@
                 onResume();
             }
 
-            updateIcon();
+            syncButtonState();
         }
 
         audioElements.forEach(function (audioEl) {
@@ -71,7 +76,11 @@
             });
         }
 
-        updateIcon();
+        audioElements.forEach(function (audioEl) {
+            audioEl.muted = isMutedByUser;
+        });
+
+        syncButtonState();
 
         return {
             isMuted: function () {
