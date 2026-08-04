@@ -77,14 +77,15 @@
     opacity: 1;
 }
 
-.final-text-box span.highlight {
+.final-text-box .highlight {
     color: #ffcc00;
 }
 
-.final-text-box span.iban {
+.final-text-box .important {
     color: #ff00ff;
     display: block;
-    margin-top: 10px;
+    width: fit-content;
+    margin: 10px auto 0px;
     font-size: 18px;
     letter-spacing: 1px;
     background: #000;
