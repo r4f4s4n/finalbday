@@ -94,8 +94,8 @@ const order = isFirstPrincipalVisit
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
 const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
-const IDLE_PROMPT_THRESHOLD_MS = 10000;
-const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 30000;
+const IDLE_PROMPT_THRESHOLD_MS = 12000;
+const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 35000;
 const IDLE_PROMPT_DURATION_MS = 6000;
 const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
 
