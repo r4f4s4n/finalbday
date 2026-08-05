@@ -91,6 +91,33 @@
     opacity: 88%;
 }
 
+.slide-idle-prompt {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) skew(-8deg);
+    z-index: 9;
+    width: min(86%, 280px);
+    padding: 10px 12px;
+    text-align: center;
+    text-transform: uppercase;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(11px, 1.35vw, 15px);
+    line-height: 1.35;
+    letter-spacing: 0.08em;
+    color: #ffe100;
+    background: rgba(209, 0, 0, 0.94);
+    border: 3px solid #111;
+    box-shadow: 0 0 0 3px #ffe100, 6px 6px 0 #111;
+    text-shadow: 2px 2px 0 #111;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.slide-idle-prompt.is-visible {
+    animation: idle-prompt-blink-fade 4s linear forwards;
+}
+
 .winner-badge {
     position: absolute;
     top: 10px;
@@ -315,5 +342,39 @@
 
     100% {
         border-color: #ffcc00;
+    }
+}
+
+@keyframes idle-prompt-blink-fade {
+    0% {
+        opacity: 0;
+    }
+
+    8% {
+        opacity: 1;
+    }
+
+    16% {
+        opacity: 0.25;
+    }
+
+    24% {
+        opacity: 1;
+    }
+
+    32% {
+        opacity: 0.2;
+    }
+
+    40% {
+        opacity: 1;
+    }
+
+    72% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
     }
 }
