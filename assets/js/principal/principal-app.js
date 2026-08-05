@@ -94,8 +94,8 @@ const order = isFirstPrincipalVisit
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
 const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
-const IDLE_PROMPT_THRESHOLD_MS = 12000;
-const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 35000;
+const IDLE_PROMPT_THRESHOLD_MS = 10000;
+const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 30000;
 const IDLE_PROMPT_DURATION_MS = 6000;
 const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
 
@@ -141,6 +141,8 @@ function showIdlePromptForActiveSlide() {
     const activeSlide = wrapper.querySelector('.swiper-slide-active');
     if (!activeSlide) return;
 
+    // Una vez mostrado el primer prompt, los siguientes usan el umbral corto.
+    isFirstPrincipalEntrySinceStart = false;
     removeAllIdlePrompts();
 
     const promptNode = document.createElement('div');
@@ -170,8 +172,9 @@ function markUserInteraction() {
     }
 
     lastUserInteractionAt = Date.now();
-    isFirstPrincipalEntrySinceStart = false;
-    nextIdlePromptInactivityThresholdMs = IDLE_PROMPT_THRESHOLD_MS;
+    // El umbral se mantiene según el estado de primera visita: 30s hasta que
+    // se muestre el primer prompt, 10s a partir de ese momento.
+    nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
     removeAllIdlePrompts();
 }
 
