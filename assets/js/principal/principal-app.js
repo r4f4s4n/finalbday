@@ -205,12 +205,21 @@ function startActiveSlidePromptLoop() {
 
 async function loadIdlePromptMessages() {
     try {
-        const response = await fetch(IDLE_PROMPT_CONFIG_PATH, { cache: 'no-store' });
-        if (!response.ok) {
-            throw new Error(`No se pudo cargar idle-slide-prompts.json: ${response.status}`);
+        const cachedText = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.getText === 'function'
+            ? window.FinalBdayAssetCache.getText(IDLE_PROMPT_CONFIG_PATH)
+            : '';
+        let rawJson = cachedText;
+        if (!rawJson) {
+            const response = await fetch(IDLE_PROMPT_CONFIG_PATH, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`No se pudo cargar idle-slide-prompts.json: ${response.status}`);
+            }
+            rawJson = await response.json();
+        } else {
+            rawJson = JSON.parse(rawJson);
         }
 
-        const data = await response.json();
+        const data = rawJson;
         if (!data || !Array.isArray(data.messages)) {
             throw new Error('Formato invalido en idle-slide-prompts.json');
         }

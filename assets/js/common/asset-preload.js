@@ -197,12 +197,19 @@
                     return true;
                 }
 
-                const response = await fetch(absoluteUrl, { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
+                const textController = new AbortController();
+                const textTimeoutId = setTimeout(() => textController.abort(), getPreloadTimeoutMs());
+                let textResponse;
+                try {
+                    textResponse = await fetch(absoluteUrl, { cache: 'no-store', signal: textController.signal });
+                } finally {
+                    clearTimeout(textTimeoutId);
+                }
+                if (!textResponse.ok) {
+                    throw new Error('HTTP ' + textResponse.status);
                 }
 
-                const text = await response.text();
+                const text = await textResponse.text();
                 retainedPreloadedResources.set(absoluteUrl, {
                     absoluteUrl: absoluteUrl,
                     text: text,

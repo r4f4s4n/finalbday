@@ -36,12 +36,19 @@ async function loadComponentInto(selector, url, options) {
 
     let rawMarkup = cachedMarkup;
     if (!rawMarkup) {
-        const response = await fetch(normalizedUrl, { cache: 'no-store' });
-        if (!response.ok) {
-            throw new Error(`No se pudo cargar ${normalizedUrl}: ${response.status}`);
+        const fetchController = new AbortController();
+        const fetchTimeoutId = setTimeout(() => fetchController.abort(), 30000);
+        let fetchResponse;
+        try {
+            fetchResponse = await fetch(normalizedUrl, { cache: 'no-store', signal: fetchController.signal });
+        } finally {
+            clearTimeout(fetchTimeoutId);
+        }
+        if (!fetchResponse.ok) {
+            throw new Error(`No se pudo cargar ${normalizedUrl}: ${fetchResponse.status}`);
         }
 
-        rawMarkup = await response.text();
+        rawMarkup = await fetchResponse.text();
     }
     container.innerHTML = normalizeComponentMarkup(rawMarkup, effectiveOptions);
 }
