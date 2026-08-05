@@ -26,7 +26,7 @@
     background-image: url('../../backgrounds/cembebg.png');
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: auto 100%;
 }
 
 .cembe-video-frame {
@@ -135,11 +135,5 @@
         border-top-width: 11px;
         border-bottom-width: 11px;
         border-left-width: 17px;
-    }
-}
-
-@media (min-width: 769px) {
-    .cembe-page {
-        background-size: auto 100%;
     }
 }

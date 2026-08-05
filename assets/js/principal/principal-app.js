@@ -80,7 +80,8 @@ function markPrincipalVisitDone() {
 }
 
 const startCustomId = findStartCustomId(customsData);
-const isFirstPrincipalVisit = !readStorageValue(FIRST_VISIT_STORAGE_KEY);
+//const isFirstPrincipalVisit = !readStorageValue(FIRST_VISIT_STORAGE_KEY);
+const isFirstPrincipalVisit = true;
 
 if (isFirstPrincipalVisit) {
     markPrincipalVisitDone();

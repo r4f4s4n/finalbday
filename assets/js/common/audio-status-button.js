@@ -26,8 +26,12 @@
             return audioElements.some(isAudioElementPlaying);
         }
 
+        function isSoundEnabledNow() {
+            return hasExplicitUserAction ? !isMutedByUser : isAnyAudioPlaying();
+        }
+
         function syncButtonState() {
-            const soundEnabled = hasExplicitUserAction ? !isMutedByUser : isAnyAudioPlaying();
+            const soundEnabled = isSoundEnabledNow();
             const nextSrc = soundEnabled ? iconPlaySrc : iconMutedSrc;
 
             if (iconEl && iconEl.getAttribute('src') !== nextSrc) {
@@ -72,7 +76,9 @@
 
         if (buttonEl) {
             buttonEl.addEventListener('click', function () {
-                setMuted(!isMutedByUser);
+                // El toggle debe basarse en el estado efectivo actual (lo que
+                // ve el usuario), no solo en isMutedByUser.
+                setMuted(isSoundEnabledNow());
             });
         }
 

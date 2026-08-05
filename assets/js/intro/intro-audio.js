@@ -45,7 +45,13 @@
             }, retryDelayMs);
         }
 
-        function onPotentialUnlock() {
+        function onPotentialUnlock(event) {
+            const eventTarget = event && event.target;
+
+            if (eventTarget && eventTarget.closest && eventTarget.closest('#audio-status-button')) {
+                return;
+            }
+
             startIntroBirdsMusic(0);
         }
 

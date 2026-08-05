@@ -18,11 +18,15 @@ let cembeView = null;
 let btnStart = null;
 let introAudio = null;
 let audioStatusController = null;
+let audioStatusReadyPollId = null;
+let audioStatusRevealTimeoutId = null;
 
 window.__FB_LOADER_OPTIONS = {
     stripParentPrefix: true,
     replaceAssetParentPrefix: true
 };
+
+const AUDIO_STATUS_REVEAL_DELAY_MS = 1000;
 
 function bindDomRefs() {
     progressFill = document.getElementById('progress-fill');
@@ -45,6 +49,62 @@ function bindDomRefs() {
     btnStart = document.getElementById('btn-start');
 }
 
+function setAudioStatusButtonVisibility(isVisible) {
+    if (!audioStatusButton) return;
+
+    audioStatusButton.style.visibility = isVisible ? 'visible' : 'hidden';
+    audioStatusButton.style.pointerEvents = isVisible ? 'auto' : 'none';
+}
+
+function isGlobalMusicReadyToPlayThrough() {
+    if (!globalBgMusic) return false;
+
+    const hasSource = !!(globalBgMusic.currentSrc || globalBgMusic.getAttribute('src'));
+    return hasSource && globalBgMusic.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA;
+}
+
+function setupAudioStatusButtonGate() {
+    if (!audioStatusButton || !globalBgMusic) return;
+
+    setAudioStatusButtonVisibility(false);
+
+    const revealIfReady = () => {
+        if (!isGlobalMusicReadyToPlayThrough()) return;
+
+        globalBgMusic.removeEventListener('canplaythrough', revealIfReady);
+        globalBgMusic.removeEventListener('loadeddata', revealIfReady);
+        globalBgMusic.removeEventListener('canplay', revealIfReady);
+
+        if (audioStatusReadyPollId !== null) {
+            clearInterval(audioStatusReadyPollId);
+            audioStatusReadyPollId = null;
+        }
+
+        if (audioStatusRevealTimeoutId !== null) {
+            clearTimeout(audioStatusRevealTimeoutId);
+            audioStatusRevealTimeoutId = null;
+        }
+
+        audioStatusRevealTimeoutId = setTimeout(() => {
+            setAudioStatusButtonVisibility(true);
+            audioStatusRevealTimeoutId = null;
+        }, AUDIO_STATUS_REVEAL_DELAY_MS);
+    };
+
+    globalBgMusic.addEventListener('canplaythrough', revealIfReady);
+    globalBgMusic.addEventListener('loadeddata', revealIfReady);
+    globalBgMusic.addEventListener('canplay', revealIfReady);
+
+    // Fallback para navegadores que hidratan/precargan desde cache sin emitir
+    // siempre el mismo set de eventos.
+    if (audioStatusReadyPollId !== null) {
+        clearInterval(audioStatusReadyPollId);
+    }
+    audioStatusReadyPollId = setInterval(revealIfReady, 150);
+
+    revealIfReady();
+}
+
 function setupLoaderAudioUnlock() {
     if (!loaderPage) return;
 
@@ -56,7 +116,15 @@ function setupLoaderAudioUnlock() {
         });
     }
 
-    function onFirstUserGesture() {
+    function onFirstUserGesture(event) {
+        const eventTarget = event && event.target;
+
+        // Si la interacción nace en el propio botón de audio, dejamos que
+        // actúe solo su controlador y no disparamos también el unlock global.
+        if (eventTarget && eventTarget.closest && eventTarget.closest('#audio-status-button')) {
+            return;
+        }
+
         detachListeners();
 
         if (audioStatusController && audioStatusController.isMuted()) {
@@ -387,6 +455,7 @@ async function boot() {
     try {
         await loadTopLevelViews();
         bindDomRefs();
+        setupAudioStatusButtonGate();
         initAudioControllers();
         setupLoaderAudioUnlock();
         setupUiEvents();
