@@ -30,9 +30,16 @@
             return hasExplicitUserAction ? !isMutedByUser : isAnyAudioPlaying();
         }
 
+        function resolveAssetSrc(src) {
+            if (window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function') {
+                return window.FinalBdayAssetCache.resolve(src);
+            }
+            return src;
+        }
+
         function syncButtonState() {
             const soundEnabled = isSoundEnabledNow();
-            const nextSrc = soundEnabled ? iconPlaySrc : iconMutedSrc;
+            const nextSrc = resolveAssetSrc(soundEnabled ? iconPlaySrc : iconMutedSrc);
 
             if (iconEl && iconEl.getAttribute('src') !== nextSrc) {
                 iconEl.setAttribute('src', nextSrc);

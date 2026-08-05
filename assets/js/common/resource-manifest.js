@@ -12,6 +12,7 @@
         'assets/icons/favicon.ico',
         'assets/icons/cembeicon.png',
         'assets/icons/vol-play.png',
+        'assets/icons/vol-mute.png',
         'assets/backgrounds/cembebg.png',
         'components/loader.js',
         'components/app-loader-view.html',
@@ -34,12 +35,25 @@
         'assets/backgrounds/bar2-movil.mp4'
     ];
 
+    function isLikelyMobileDevice() {
+        return window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    }
+
+    // En móvil se omiten las variantes _escritorio para reducir uso de memoria.
+    const DESKTOP_ONLY_RESOURCES = new Set([
+        'assets/backgrounds/video_escritorio.mp4',
+        'assets/backgrounds/zoom_escritorio.mp4'
+    ]);
+
     // Construye la lista final de URLs absolutas a precargar, añadiendo
     // también los ficheros de customs declarados en principal-customs-data.js
     // (no se pueden listar aquí de forma estática porque dependen de esos datos).
     function build() {
+        const isMobile = isLikelyMobileDevice();
         const resources = new Set(
-            STATIC_RESOURCES.map((path) => new URL(path, location.href).href)
+            STATIC_RESOURCES
+                .filter((path) => !isMobile || !DESKTOP_ONLY_RESOURCES.has(path))
+                .map((path) => new URL(path, location.href).href)
         );
 
         if (window.FinalBdayCustomsData && typeof window.FinalBdayCustomsData.getData === 'function') {

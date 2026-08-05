@@ -11,7 +11,7 @@
     }
 
     function getMaxConcurrentPreloads() {
-        return isLikelyMobileDevice() ? 2 : 3;
+        return isLikelyMobileDevice() ? 3 : 3;
     }
 
     function createController(options) {
