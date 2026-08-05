@@ -93,8 +93,140 @@ const order = isFirstPrincipalVisit
     : shuffledOrder;
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
+const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
+const IDLE_PROMPT_THRESHOLD_MS = 10000;
+const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 30000;
+const IDLE_PROMPT_DURATION_MS = 6000;
+const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
+
+const fallbackIdlePrompts = [
+    'ELIGEME',
+    'SOY EL MEJOR DISFRAZ',
+    'POR FAVOR SACAME DE AQUI'
+];
+
+let isFirstPrincipalEntrySinceStart = true;
+
+function getCurrentIdlePromptThresholdMs() {
+    return isFirstPrincipalEntrySinceStart
+        ? IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS
+        : IDLE_PROMPT_THRESHOLD_MS;
+}
+
+let idlePromptMessages = fallbackIdlePrompts.slice();
+let lastUserInteractionAt = Date.now();
+let activeSlideBecameActiveAt = Date.now();
+let nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
+let activeSlidePromptLoopId = null;
+
 let suppressSlideActivationUntil = 0;
 let lastTouchZoomActivationAt = 0;
+
+function pickRandomIdlePrompt() {
+    if (!idlePromptMessages.length) {
+        return fallbackIdlePrompts[0];
+    }
+
+    const index = Math.floor(Math.random() * idlePromptMessages.length);
+    return idlePromptMessages[index];
+}
+
+function removeAllIdlePrompts() {
+    wrapper.querySelectorAll('.slide-idle-prompt').forEach((node) => {
+        node.remove();
+    });
+}
+
+function showIdlePromptForActiveSlide() {
+    const activeSlide = wrapper.querySelector('.swiper-slide-active');
+    if (!activeSlide) return;
+
+    removeAllIdlePrompts();
+
+    const promptNode = document.createElement('div');
+    promptNode.className = 'slide-idle-prompt is-visible';
+    promptNode.textContent = pickRandomIdlePrompt();
+    activeSlide.appendChild(promptNode);
+
+    const removePrompt = () => {
+        promptNode.removeEventListener('animationend', removePrompt);
+        if (promptNode.parentNode) {
+            promptNode.parentNode.removeChild(promptNode);
+        }
+    };
+
+    promptNode.addEventListener('animationend', removePrompt);
+    setTimeout(removePrompt, IDLE_PROMPT_DURATION_MS + 120);
+}
+
+function isPrincipalViewActive() {
+    const principalView = document.getElementById('principal-view');
+    return !!(principalView && principalView.classList.contains('is-active'));
+}
+
+function markUserInteraction() {
+    if (!isPrincipalViewActive()) {
+        return;
+    }
+
+    lastUserInteractionAt = Date.now();
+    isFirstPrincipalEntrySinceStart = false;
+    nextIdlePromptInactivityThresholdMs = IDLE_PROMPT_THRESHOLD_MS;
+    removeAllIdlePrompts();
+}
+
+function resetActiveSlideCounter() {
+    activeSlideBecameActiveAt = Date.now();
+    nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
+    removeAllIdlePrompts();
+}
+
+function startActiveSlidePromptLoop() {
+    if (activeSlidePromptLoopId !== null) {
+        clearInterval(activeSlidePromptLoopId);
+    }
+
+    activeSlidePromptLoopId = window.setInterval(() => {
+        const now = Date.now();
+        const activeForMs = now - activeSlideBecameActiveAt;
+        const idleForMs = now - lastUserInteractionAt;
+        const mainSwiper = document.getElementById('main-swiper');
+
+        if (!mainSwiper || mainSwiper.style.display === 'none') {
+            return;
+        }
+
+        if (activeForMs >= IDLE_PROMPT_THRESHOLD_MS && idleForMs >= nextIdlePromptInactivityThresholdMs) {
+            showIdlePromptForActiveSlide();
+            nextIdlePromptInactivityThresholdMs = idleForMs + IDLE_PROMPT_THRESHOLD_MS;
+        }
+    }, ACTIVE_SLIDE_POLL_INTERVAL_MS);
+}
+
+async function loadIdlePromptMessages() {
+    try {
+        const response = await fetch(IDLE_PROMPT_CONFIG_PATH, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`No se pudo cargar idle-slide-prompts.json: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (!data || !Array.isArray(data.messages)) {
+            throw new Error('Formato invalido en idle-slide-prompts.json');
+        }
+
+        const cleaned = data.messages
+            .map((text) => (typeof text === 'string' ? text.trim() : ''))
+            .filter(Boolean);
+
+        if (cleaned.length) {
+            idlePromptMessages = cleaned;
+        }
+    } catch (error) {
+        console.warn('[FinalBday] Usando textos fallback para prompts idle:', error);
+        idlePromptMessages = fallbackIdlePrompts.slice();
+    }
+}
 
 function suppressSlideActivation(duration = 600) {
     suppressSlideActivationUntil = Date.now() + duration;
@@ -109,6 +241,10 @@ function shouldSuppressSlideActivation() {
     }
     return Date.now() < suppressSlideActivationUntil;
 }
+
+['pointerdown', 'pointerup', 'click', 'touchstart', 'keydown', 'wheel'].forEach((eventName) => {
+    document.addEventListener(eventName, markUserInteraction, { passive: true });
+});
 
 
 function createZoomIconImage(isMinus) {
@@ -502,6 +638,8 @@ function handleZoomButtonActivation(event) {
 
 wrapper.addEventListener('pointerup', handleZoomButtonActivation);
 wrapper.addEventListener('click', handleZoomButtonActivation);
+
+await loadIdlePromptMessages();
     
 const swiper = new Swiper('.swiper', {
     slidesPerView: 'auto',      
@@ -514,8 +652,12 @@ const swiper = new Swiper('.swiper', {
 swiper.on('slideChange', syncSwiperCategoryTag);
 swiper.on('transitionEnd', syncSwiperCategoryTag);
 swiper.on('resize', syncSwiperCategoryTag);
+swiper.on('slideChange', resetActiveSlideCounter);
+swiper.on('transitionEnd', resetActiveSlideCounter);
 
 forceStartApp();
+resetActiveSlideCounter();
+startActiveSlidePromptLoop();
 
 // Ids actualmente mostrados en el slider (todos, o filtrados por categoría/año)
 let currentSwiperIds = order;
@@ -556,6 +698,7 @@ function rebuildSwiperSlides(ids) {
     }
 
     currentSwiperIds = ids;
+    resetActiveSlideCounter();
     syncSwiperCategoryTag();
 }
 
@@ -567,6 +710,7 @@ function goToSlideIndex(index, speed = 0) {
         swiper.slideTo(index, speed);
     }
 
+    resetActiveSlideCounter();
     syncSwiperCategoryTag();
 }
 
