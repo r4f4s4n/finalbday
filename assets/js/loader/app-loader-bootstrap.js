@@ -27,6 +27,16 @@ window.__FB_LOADER_OPTIONS = {
 };
 
 const AUDIO_STATUS_REVEAL_DELAY_MS = 1000;
+const LOADER_STATUS_CONFIG_PATH = 'assets/js/loader/loader-status-prompts.json';
+const DEFAULT_LOADER_STATUS_MESSAGES = [
+    'Disfrazando al personal...',
+    'Enfriándo la cerveza...',
+    'Encendiendo el megatron...'
+];
+const DEFAULT_LOADER_STATUS_DURATION_MS = 2000;
+
+let loaderStatusMessages = DEFAULT_LOADER_STATUS_MESSAGES.slice();
+let loaderStatusDurationMs = DEFAULT_LOADER_STATUS_DURATION_MS;
 
 function bindDomRefs() {
     progressFill = document.getElementById('progress-fill');
@@ -252,6 +262,54 @@ function waitMs(ms) {
     return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
+function getLoaderStatusMessage(bootStartAt) {
+    const safeDurationMs = Math.max(1, Number(loaderStatusDurationMs) || DEFAULT_LOADER_STATUS_DURATION_MS);
+    const elapsedMs = Math.max(0, performance.now() - bootStartAt);
+    const maxIndex = Math.max(0, loaderStatusMessages.length - 1);
+    const currentIndex = Math.min(Math.floor(elapsedMs / safeDurationMs), maxIndex);
+    return loaderStatusMessages[currentIndex] || DEFAULT_LOADER_STATUS_MESSAGES[0];
+}
+
+async function loadLoaderStatusConfig() {
+    try {
+        const cachedText = window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.getText === 'function'
+            ? window.FinalBdayAssetCache.getText(LOADER_STATUS_CONFIG_PATH)
+            : '';
+
+        let rawJson = cachedText;
+        if (!rawJson) {
+            const response = await fetch(LOADER_STATUS_CONFIG_PATH, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error('No se pudo cargar loader-status-prompts.json: ' + response.status);
+            }
+            rawJson = await response.json();
+        } else {
+            rawJson = JSON.parse(rawJson);
+        }
+
+        const data = rawJson;
+        if (!data || !Array.isArray(data.messages)) {
+            throw new Error('Formato invalido en loader-status-prompts.json');
+        }
+
+        const cleanedMessages = data.messages
+            .map((text) => (typeof text === 'string' ? text.trim() : ''))
+            .filter(Boolean);
+
+        if (cleanedMessages.length) {
+            loaderStatusMessages = cleanedMessages;
+        }
+
+        if (typeof data.durationMs === 'number' && Number.isFinite(data.durationMs) && data.durationMs > 0) {
+            loaderStatusDurationMs = Math.round(data.durationMs);
+        }
+    } catch (error) {
+        console.warn('[FinalBday] Usando textos fallback para estado de carga:', error);
+        loaderStatusMessages = DEFAULT_LOADER_STATUS_MESSAGES.slice();
+        loaderStatusDurationMs = DEFAULT_LOADER_STATUS_DURATION_MS;
+    }
+}
+
 function isCustomResourceUrl(url) {
     try {
         const parsed = new URL(url, location.href);
@@ -473,6 +531,8 @@ async function boot() {
         let simulationTimerId = null;
         const bootStartAt = performance.now();
 
+        await loadLoaderStatusConfig();
+
         function getShownCustoms() {
             return simulationLockedToReal
                 ? Math.max(minVisibleCount, loadedCustoms)
@@ -487,7 +547,7 @@ async function boot() {
             simulationLockedToReal = true;
         }
 
-        updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
+        updateProgress(getShownCustoms(), totalCustoms, getLoaderStatusMessage(bootStartAt));
 
         simulationTimerId = setInterval(() => {
             if (simulationLockedToReal) return;
@@ -499,8 +559,8 @@ async function boot() {
                 stopSimulation();
             }
 
-            updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
-        }, 2000);
+            updateProgress(getShownCustoms(), totalCustoms, getLoaderStatusMessage(bootStartAt));
+        }, loaderStatusDurationMs);
 
         try {
             await assetPreload.preloadAppResources({
@@ -511,7 +571,7 @@ async function boot() {
                         stopSimulation();
                     }
 
-                    updateProgress(getShownCustoms(), totalCustoms, 'Disfrazando al personal...');
+                    updateProgress(getShownCustoms(), totalCustoms, getLoaderStatusMessage(bootStartAt));
                 }
             });
         } catch (error) {
@@ -549,7 +609,7 @@ async function boot() {
             getShownCustoms(),
             totalCustoms,
             loadedCustoms >= totalCustoms
-                ? 'Conectando últimos cables...'
+                ? 'Conectando los últimos cables...'
                 : 'Disfrazados, pero faltan por llegar algunas cosas de Amazon...'
         );
         setTimeout(enterIntro, 250);

@@ -17,6 +17,7 @@
         'assets/icons/lupamenos.png',
         'assets/icons/torfeo.png',
         'assets/icons/dados.png',
+        'assets/js/loader/loader-status-prompts.json',
         'assets/js/principal/idle-slide-prompts.json',
         'assets/backgrounds/cembebg.png',
         'components/loader.js',
