@@ -94,8 +94,8 @@ const order = isFirstPrincipalVisit
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
 const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
-const IDLE_PROMPT_THRESHOLD_MS = 9000;
-const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 22000;
+const IDLE_PROMPT_THRESHOLD_MS = 10000;
+const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 25000;
 const IDLE_PROMPT_DURATION_MS = 6000;
 const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
 
@@ -194,12 +194,13 @@ function startActiveSlidePromptLoop() {
         const activeForMs = now - activeSlideBecameActiveAt;
         const idleForMs = now - lastUserInteractionAt;
         const mainSwiper = document.getElementById('main-swiper');
+        const activeThresholdMs = getCurrentIdlePromptThresholdMs();
 
         if (!mainSwiper || mainSwiper.style.display === 'none') {
             return;
         }
 
-        if (activeForMs >= IDLE_PROMPT_THRESHOLD_MS && idleForMs >= nextIdlePromptInactivityThresholdMs) {
+        if (activeForMs >= activeThresholdMs && idleForMs >= nextIdlePromptInactivityThresholdMs) {
             showIdlePromptForActiveSlide();
             nextIdlePromptInactivityThresholdMs = idleForMs + IDLE_PROMPT_THRESHOLD_MS;
         }
