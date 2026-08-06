@@ -549,14 +549,14 @@ async function boot() {
             getShownCustoms(),
             totalCustoms,
             loadedCustoms >= totalCustoms
-                ? '¡Todo listo!'
-                : 'Carga inicial completa. Reintentando recursos pendientes en segundo plano...'
+                ? 'Conectando últimos cables...'
+                : 'Disfrazados, pero faltan por llegar algunas cosas de Amazon...'
         );
         setTimeout(enterIntro, 250);
     } catch (error) {
         if (statusText) {
             statusText.classList.add('error');
-            statusText.textContent = 'Error de precarga parcial. Continuamos con inicio inmediato...';
+            statusText.textContent = 'Problemas con el repartidor de disfraces. Continuamos con lo que tenemos...';
         }
         console.error(error);
         setTimeout(enterIntro, 500);
