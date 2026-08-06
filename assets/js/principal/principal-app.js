@@ -1,6 +1,7 @@
 (function () {
     let initPromise = null;
     let cembeViewApi = null;
+    let resetIdleStateApi = null;
 
     function isLegacyPagesContext() {
         return /\/pages\//.test(window.location.pathname);
@@ -94,8 +95,8 @@ const order = isFirstPrincipalVisit
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
 const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
-const IDLE_PROMPT_THRESHOLD_MS = 10000;
-const IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS = 25000;
+const IDLE_PROMPT_THRESHOLD_MS = 12000;
+const INITIAL_PRINCIPAL_IDLE_EXTRA_MS = 10000;
 const IDLE_PROMPT_DURATION_MS = 6000;
 const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
 
@@ -105,19 +106,11 @@ const fallbackIdlePrompts = [
     'POR FAVOR SACAME DE AQUI'
 ];
 
-let isFirstPrincipalEntrySinceStart = true;
-
-function getCurrentIdlePromptThresholdMs() {
-    return isFirstPrincipalEntrySinceStart
-        ? IDLE_PROMPT_FIRST_VISIT_THRESHOLD_MS
-        : IDLE_PROMPT_THRESHOLD_MS;
-}
-
 let idlePromptMessages = fallbackIdlePrompts.slice();
 let lastUserInteractionAt = Date.now();
 let activeSlideBecameActiveAt = Date.now();
-let nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
 let activeSlidePromptLoopId = null;
+let hasConsumedInitialPrincipalIdle = false;
 
 let suppressSlideActivationUntil = 0;
 let lastTouchZoomActivationAt = 0;
@@ -131,6 +124,12 @@ function pickRandomIdlePrompt() {
     return idlePromptMessages[index];
 }
 
+function getIdlePromptThresholdMs() {
+    return hasConsumedInitialPrincipalIdle
+        ? IDLE_PROMPT_THRESHOLD_MS
+        : IDLE_PROMPT_THRESHOLD_MS + INITIAL_PRINCIPAL_IDLE_EXTRA_MS;
+}
+
 function removeAllIdlePrompts() {
     wrapper.querySelectorAll('.slide-idle-prompt').forEach((node) => {
         node.remove();
@@ -141,8 +140,7 @@ function showIdlePromptForActiveSlide() {
     const activeSlide = wrapper.querySelector('.swiper-slide-active');
     if (!activeSlide) return;
 
-    // Una vez mostrado el primer prompt, los siguientes usan el umbral corto.
-    isFirstPrincipalEntrySinceStart = false;
+    hasConsumedInitialPrincipalIdle = true;
     removeAllIdlePrompts();
 
     const promptNode = document.createElement('div');
@@ -171,18 +169,24 @@ function markUserInteraction() {
         return;
     }
 
+    hasConsumedInitialPrincipalIdle = true;
     lastUserInteractionAt = Date.now();
-    // El umbral se mantiene según el estado de primera visita: 30s hasta que
-    // se muestre el primer prompt, 10s a partir de ese momento.
-    nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
     removeAllIdlePrompts();
 }
 
 function resetActiveSlideCounter() {
     activeSlideBecameActiveAt = Date.now();
-    nextIdlePromptInactivityThresholdMs = getCurrentIdlePromptThresholdMs();
     removeAllIdlePrompts();
 }
+
+function resetIdleState() {
+    const now = Date.now();
+    lastUserInteractionAt = now;
+    activeSlideBecameActiveAt = now;
+    removeAllIdlePrompts();
+}
+
+resetIdleStateApi = resetIdleState;
 
 function startActiveSlidePromptLoop() {
     if (activeSlidePromptLoopId !== null) {
@@ -194,15 +198,15 @@ function startActiveSlidePromptLoop() {
         const activeForMs = now - activeSlideBecameActiveAt;
         const idleForMs = now - lastUserInteractionAt;
         const mainSwiper = document.getElementById('main-swiper');
-        const activeThresholdMs = getCurrentIdlePromptThresholdMs();
+        const idleThresholdMs = getIdlePromptThresholdMs();
 
-        if (!mainSwiper || mainSwiper.style.display === 'none') {
+        if (!isPrincipalViewActive() || !mainSwiper || mainSwiper.style.display === 'none') {
             return;
         }
 
-        if (activeForMs >= activeThresholdMs && idleForMs >= nextIdlePromptInactivityThresholdMs) {
+        if (activeForMs >= idleThresholdMs && idleForMs >= idleThresholdMs) {
             showIdlePromptForActiveSlide();
-            nextIdlePromptInactivityThresholdMs = idleForMs + IDLE_PROMPT_THRESHOLD_MS;
+            lastUserInteractionAt = now;
         }
     }, ACTIVE_SLIDE_POLL_INTERVAL_MS);
 }
@@ -1157,6 +1161,9 @@ cembeViewApi = {
 
     window.FinalBdayPrincipalApp = {
         init: init,
+        resetIdleState: function () {
+            if (resetIdleStateApi) resetIdleStateApi();
+        },
         showCembeView: function () {
             if (cembeViewApi) cembeViewApi.showCembeView();
         },

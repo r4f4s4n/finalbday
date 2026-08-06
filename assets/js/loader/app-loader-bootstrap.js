@@ -388,6 +388,10 @@ function transitionToPrincipal() {
     if (cembeNavButton) {
         cembeNavButton.classList.remove('is-hidden');
     }
+
+    if (window.FinalBdayPrincipalApp && typeof window.FinalBdayPrincipalApp.resetIdleState === 'function') {
+        window.FinalBdayPrincipalApp.resetIdleState();
+    }
 }
 
 window.addEventListener('pageshow', resetCembeNavButtonState);
