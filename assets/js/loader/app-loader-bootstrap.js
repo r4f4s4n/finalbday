@@ -11,6 +11,7 @@ let introTransitionVideo = null;
 let globalBgMusic = null;
 let introBgBirds = null;
 let cembeBgMusic = null;
+let doorsVoiceover = null;
 let audioStatusButton = null;
 let audioStatusIcon = null;
 let cembeNavButton = null;
@@ -52,6 +53,7 @@ function bindDomRefs() {
     globalBgMusic = document.getElementById('global-bg-music');
     introBgBirds = document.getElementById('intro-bg-birds');
     cembeBgMusic = document.getElementById('cembe-bg-music');
+    doorsVoiceover = document.getElementById('doors-voiceover');
     audioStatusButton = document.getElementById('audio-status-button');
     audioStatusIcon = document.getElementById('audio-status-icon');
     cembeNavButton = document.getElementById('cembe-nav-button');
@@ -161,7 +163,7 @@ function initAudioControllers() {
     audioStatusController = window.FinalBdayAudioStatusButton.createController({
         buttonEl: audioStatusButton,
         iconEl: audioStatusIcon,
-        audioElements: [introBgBirds, globalBgMusic, cembeBgMusic],
+        audioElements: [introBgBirds, globalBgMusic, cembeBgMusic, doorsVoiceover],
         initialMuted: false,
         iconMutedSrc: 'assets/icons/vol-mute.png',
         iconPlaySrc: 'assets/icons/vol-play.png',
@@ -169,7 +171,14 @@ function initAudioControllers() {
             introAudio.clearTimers();
         },
         onResume: function () {
+            const activeDoorsScreen = document.getElementById('doors-screen');
             const activeCembeView = document.getElementById('cembe-view');
+            if (activeDoorsScreen && activeDoorsScreen.style.display === 'flex') {
+                if (window.FinalBdayPrincipalApp && typeof window.FinalBdayPrincipalApp.handleDoorsAudioResume === 'function') {
+                    window.FinalBdayPrincipalApp.handleDoorsAudioResume();
+                    return;
+                }
+            }
             if (activeCembeView && activeCembeView.classList.contains('is-visible')) {
                 cembeBgMusic.play().catch(() => {});
             } else if (principalView.classList.contains('is-active') || introOverlay.style.display === 'none') {

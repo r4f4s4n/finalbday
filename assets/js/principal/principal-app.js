@@ -953,6 +953,7 @@ const btnBack = document.getElementById('btn-back');
 const doorsScreen = document.getElementById('doors-screen');
 const doorsTextBox = document.getElementById('doors-text-box');
 const doorsBackBtn = document.getElementById('doors-back-btn');
+const doorsVoiceover = document.getElementById('doors-voiceover');
 const cembeNavButton = document.getElementById('cembe-nav-button');
 const cembeView = document.getElementById('cembe-view');
 const cembeBackBtn = document.getElementById('cembe-back-btn');
@@ -967,11 +968,15 @@ const BG_VIDEO_TRANSITION = projectPath('assets/backgrounds/bar1-movil.mp4');
 const BG_VIDEO_FINAL = projectPath('assets/backgrounds/bar2-movil.mp4');
 const BG_VIDEO_DOORS_TRANSITION = projectPath('assets/backgrounds/doors1-movil.mp4');
 const BG_VIDEO_DOORS_FINAL = projectPath('assets/backgrounds/doors2-movil.mp4');
-const DOORS_REDIRECT_DELAY_MS = 360 * 1000;
+const GLOBAL_BG_FULL_VOLUME = 1;
+const DOORS_BG_DUCKED_VOLUME = 0.10;
+const DOORS_REDIRECT_DELAY_MS = 30 * 1000;
 const DOORS_RETURN_GRACE_MS = 6000;
 
 let hasVisitedFinalScreen = false;
 let hasShownDoorsScreen = false;
+let hasDoorsTextRevealStarted = false;
+let hasDoorsVoiceoverEnded = false;
 let doorsRedirectTimeoutId = null;
 let doorsReturnGraceTimeoutId = null;
 let doorsRedirectDeadlineAt = 0;
@@ -1048,6 +1053,81 @@ function showPrincipalChrome() {
     syncSwiperCategoryTag();
 }
 
+function setGlobalBgMusicVolume(volume) {
+    if (!globalBgMusic) {
+        return;
+    }
+
+    globalBgMusic.volume = volume;
+}
+
+function restoreGlobalBgMusicVolume() {
+    setGlobalBgMusicVolume(GLOBAL_BG_FULL_VOLUME);
+}
+
+function duckGlobalBgMusicVolume() {
+    setGlobalBgMusicVolume(DOORS_BG_DUCKED_VOLUME);
+}
+
+function resetDoorsVoiceoverPlayback() {
+    if (!doorsVoiceover) {
+        hasDoorsTextRevealStarted = false;
+        hasDoorsVoiceoverEnded = false;
+        return;
+    }
+
+    doorsVoiceover.pause();
+
+    try {
+        doorsVoiceover.currentTime = 0;
+    } catch (_) {
+        // Algunos navegadores pueden bloquear el seek si aún no hay metadata.
+    }
+
+    hasDoorsTextRevealStarted = false;
+    hasDoorsVoiceoverEnded = false;
+}
+
+function stopDoorsAudioOverlay() {
+    resetDoorsVoiceoverPlayback();
+    restoreGlobalBgMusicVolume();
+}
+
+function handleDoorsVoiceoverEnded() {
+    hasDoorsVoiceoverEnded = true;
+    restoreGlobalBgMusicVolume();
+}
+
+function resumeDoorsAudioIfNeeded() {
+    if (!isDoorsScreenVisible() || isAppAudioMuted() || !hasDoorsTextRevealStarted) {
+        return false;
+    }
+
+    if (!globalBgMusic) {
+        return false;
+    }
+
+    if (hasDoorsVoiceoverEnded || !doorsVoiceover) {
+        restoreGlobalBgMusicVolume();
+        globalBgMusic.play().catch(() => {});
+        return true;
+    }
+
+    duckGlobalBgMusicVolume();
+    globalBgMusic.play().catch(() => {});
+    doorsVoiceover.play().catch(() => {});
+    return true;
+}
+
+if (doorsVoiceover) {
+    doorsVoiceover.addEventListener('ended', handleDoorsVoiceoverEnded);
+}
+
+function handleDoorsTextReveal() {
+    hasDoorsTextRevealStarted = true;
+    resumeDoorsAudioIfNeeded();
+}
+
 function showDoorsScreen() {
     if (!doorsScreen || isDoorsScreenVisible() || hasShownDoorsScreen) {
         return;
@@ -1066,6 +1146,7 @@ function showDoorsScreen() {
         screen: doorsScreen,
         textBox: doorsTextBox,
         previewBox: null,
+        onRevealContent: handleDoorsTextReveal,
         shouldShowAtmosphere: function () {
             return hasVisitedFinalScreen;
         },
@@ -1075,6 +1156,7 @@ function showDoorsScreen() {
     doorsScreen.style.display = 'flex';
     hasShownDoorsScreen = true;
     doorsRedirectPending = false;
+    resetDoorsVoiceoverPlayback();
 }
 
 function canRunDoorsTimer() {
@@ -1252,6 +1334,7 @@ btnBack.addEventListener('click', () => {
 if (doorsBackBtn) {
     doorsBackBtn.addEventListener('click', () => {
         doorsScreen.style.display = 'none';
+        stopDoorsAudioOverlay();
         bgVideoController.restoreOriginalBgVideo({
             screen: doorsScreen,
             textBox: doorsTextBox,
@@ -1319,6 +1402,9 @@ cembeViewApi = {
         init: init,
         resetIdleState: function () {
             if (resetIdleStateApi) resetIdleStateApi();
+        },
+        handleDoorsAudioResume: function () {
+            return resumeDoorsAudioIfNeeded();
         },
         showCembeView: function () {
             if (cembeViewApi) cembeViewApi.showCembeView();

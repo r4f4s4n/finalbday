@@ -54,6 +54,9 @@
                 previewBox: Object.prototype.hasOwnProperty.call(content, 'previewBox')
                     ? content.previewBox
                     : finalPreviewBox,
+                onRevealContent: typeof content.onRevealContent === 'function'
+                    ? content.onRevealContent
+                    : null,
                 shouldShowAtmosphere: typeof content.shouldShowAtmosphere === 'function'
                     ? content.shouldShowAtmosphere
                     : defaultShouldShowAtmosphere
@@ -106,6 +109,10 @@
 
             if (content.previewBox) {
                 content.previewBox.classList.add('is-visible');
+            }
+
+            if (content.onRevealContent) {
+                content.onRevealContent(content);
             }
 
             if (!content.screen) return;
