@@ -1,6 +1,7 @@
 (function () {
     function createController(options) {
         const settings = options || {};
+        const finalScreen = settings.finalScreen;
         const finalTextBox = settings.finalTextBox;
         const finalPreviewBox = settings.finalPreviewBox;
         const bgVideoA = settings.bgVideoA;
@@ -10,10 +11,14 @@
         const finalVideo = settings.finalVideo;
         const BAR1_START_TIME_SECONDS = 0.4;
         const BAR2_PRELOAD_DELAY_MS = 2000;
+        const ATMOSPHERE_DELAY_MS = 5000;
+        const LASER_DELAY_MS = 1000;
 
         let activeBgVideo = bgVideoA;
         let standbyBgVideo = bgVideoB;
         let bgTransitionToken = 0;
+        let atmosphereTimerId = null;
+        let laserTimerId = null;
 
         function resolveAssetUrl(url) {
             if (window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function') {
@@ -36,6 +41,21 @@
         }
 
         function hideFinalContent() {
+            if (atmosphereTimerId !== null) {
+                clearTimeout(atmosphereTimerId);
+                atmosphereTimerId = null;
+            }
+
+            if (laserTimerId !== null) {
+                clearTimeout(laserTimerId);
+                laserTimerId = null;
+            }
+
+            if (finalScreen) {
+                finalScreen.classList.remove('with-atmosphere');
+                finalScreen.classList.remove('with-lasers');
+            }
+
             finalTextBox.classList.remove('is-visible');
             finalPreviewBox.classList.remove('is-visible');
         }
@@ -43,6 +63,26 @@
         function revealFinalContent() {
             finalTextBox.classList.add('is-visible');
             finalPreviewBox.classList.add('is-visible');
+
+            if (!finalScreen) return;
+
+            if (atmosphereTimerId !== null) {
+                clearTimeout(atmosphereTimerId);
+            }
+
+            if (laserTimerId !== null) {
+                clearTimeout(laserTimerId);
+                laserTimerId = null;
+            }
+
+            atmosphereTimerId = setTimeout(() => {
+                finalScreen.classList.add('with-atmosphere');
+                laserTimerId = setTimeout(() => {
+                    finalScreen.classList.add('with-lasers');
+                    laserTimerId = null;
+                }, LASER_DELAY_MS);
+                atmosphereTimerId = null;
+            }, ATMOSPHERE_DELAY_MS);
         }
 
         function swapActiveBgVideo() {

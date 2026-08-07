@@ -95,8 +95,8 @@ const order = isFirstPrincipalVisit
 const wrapper = document.getElementById('slides-wrapper');
 const swiperCategoryTag = document.getElementById('swiper-category-tag');
 const IDLE_PROMPT_CONFIG_PATH = projectPath('assets/js/principal/idle-slide-prompts.json');
-const IDLE_PROMPT_THRESHOLD_MS = 12000;
-const INITIAL_PRINCIPAL_IDLE_EXTRA_MS = 10000;
+const IDLE_PROMPT_THRESHOLD_MS = 11000;
+const INITIAL_PRINCIPAL_IDLE_EXTRA_MS = 9000;
 const IDLE_PROMPT_DURATION_MS = 6000;
 const ACTIVE_SLIDE_POLL_INTERVAL_MS = 250;
 
@@ -961,6 +961,7 @@ const BG_VIDEO_TRANSITION = projectPath('assets/backgrounds/bar1-movil.mp4');
 const BG_VIDEO_FINAL = projectPath('assets/backgrounds/bar2-movil.mp4');
 
 const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
+    finalScreen: finalScreen,
     finalTextBox: finalTextBox,
     finalPreviewBox: finalPreviewBox,
     bgVideoA: bgVideoA,
