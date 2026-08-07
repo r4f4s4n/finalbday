@@ -30,6 +30,7 @@
         '[data-component="media-shell"]': projectPath('components/principal/app-media-shell.html'),
         '[data-component="confirm-dialog"]': projectPath('components/principal/app-confirm-dialog.html'),
         '[data-component="final-screen"]': projectPath('components/principal/app-final-screen.html'),
+        '[data-component="doors-screen"]': projectPath('components/principal/app-doors-screen.html'),
         '[data-component="cembe-view"]': projectPath('components/principal/app-cembe-view.html')
     });
 	
@@ -184,6 +185,7 @@ function resetIdleState() {
     lastUserInteractionAt = now;
     activeSlideBecameActiveAt = now;
     removeAllIdlePrompts();
+    syncDoorsTimerAfterPrincipalResume();
 }
 
 resetIdleStateApi = resetIdleState;
@@ -948,6 +950,9 @@ const finalScreen = document.getElementById('final-screen');
 const finalPreviewBox = document.getElementById('final-preview-box');
 const finalTextBox = document.getElementById('final-text-box');
 const btnBack = document.getElementById('btn-back');
+const doorsScreen = document.getElementById('doors-screen');
+const doorsTextBox = document.getElementById('doors-text-box');
+const doorsBackBtn = document.getElementById('doors-back-btn');
 const cembeNavButton = document.getElementById('cembe-nav-button');
 const cembeView = document.getElementById('cembe-view');
 const cembeBackBtn = document.getElementById('cembe-back-btn');
@@ -955,10 +960,22 @@ const cembeBgMusic = document.getElementById('cembe-bg-music');
 const globalBgMusic = document.getElementById('global-bg-music');
 const bgVideoA = document.getElementById('app-bg-video');
 const bgVideoB = document.getElementById('app-bg-video-alt');
+const selectContainer = document.getElementById('select-container');
 
 const BG_VIDEO_ORIGINAL = projectPath('assets/backgrounds/disco_movil.mp4');
 const BG_VIDEO_TRANSITION = projectPath('assets/backgrounds/bar1-movil.mp4');
 const BG_VIDEO_FINAL = projectPath('assets/backgrounds/bar2-movil.mp4');
+const BG_VIDEO_DOORS_TRANSITION = projectPath('assets/backgrounds/doors1-movil.mp4');
+const BG_VIDEO_DOORS_FINAL = projectPath('assets/backgrounds/doors2-movil.mp4');
+const DOORS_REDIRECT_DELAY_MS = 360 * 1000;
+const DOORS_RETURN_GRACE_MS = 6000;
+
+let hasVisitedFinalScreen = false;
+let hasShownDoorsScreen = false;
+let doorsRedirectTimeoutId = null;
+let doorsReturnGraceTimeoutId = null;
+let doorsRedirectDeadlineAt = 0;
+let doorsRedirectPending = false;
 
 const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
     finalScreen: finalScreen,
@@ -969,6 +986,169 @@ const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
     originalVideo: BG_VIDEO_ORIGINAL,
     transitionVideo: BG_VIDEO_TRANSITION,
     finalVideo: BG_VIDEO_FINAL
+});
+
+function isFinalScreenVisible() {
+    return !!(finalScreen && finalScreen.style.display === 'flex');
+}
+
+function isDoorsScreenVisible() {
+    return !!(doorsScreen && doorsScreen.style.display === 'flex');
+}
+
+function clearDoorsRedirectTimeout() {
+    if (doorsRedirectTimeoutId !== null) {
+        clearTimeout(doorsRedirectTimeoutId);
+        doorsRedirectTimeoutId = null;
+    }
+}
+
+function clearDoorsReturnGraceTimeout() {
+    if (doorsReturnGraceTimeoutId !== null) {
+        clearTimeout(doorsReturnGraceTimeoutId);
+        doorsReturnGraceTimeoutId = null;
+    }
+}
+
+function resetDoorsRedirectState() {
+    clearDoorsRedirectTimeout();
+    clearDoorsReturnGraceTimeout();
+    doorsRedirectDeadlineAt = 0;
+    doorsRedirectPending = false;
+}
+
+function hidePrincipalChrome() {
+    mainSwiperEl.style.display = 'none';
+    mainGridEl.style.display = 'none';
+    selectContainer.style.opacity = '0';
+    selectContainer.style.pointerEvents = 'none';
+    diceBtn.style.opacity = '0';
+    diceBtn.style.pointerEvents = 'none';
+    hideSwiperCategoryTag();
+
+    if (cembeNavButton) {
+        cembeNavButton.classList.add('is-hidden');
+    }
+}
+
+function showPrincipalChrome() {
+    mainSwiperEl.style.display = 'block';
+    mainSwiperEl.style.opacity = '1';
+    mainSwiperEl.style.pointerEvents = 'auto';
+    selectContainer.style.opacity = '1';
+    selectContainer.style.pointerEvents = 'auto';
+    diceBtn.style.opacity = '1';
+    diceBtn.style.pointerEvents = 'auto';
+
+    if (cembeNavButton) {
+        cembeNavButton.classList.remove('is-hidden');
+    }
+
+    swiper.update();
+    syncSwiperCategoryTag();
+}
+
+function showDoorsScreen() {
+    if (!doorsScreen || isDoorsScreenVisible() || hasShownDoorsScreen) {
+        return;
+    }
+
+    hidePrincipalChrome();
+    bgVideoController.hideFinalContent({
+        screen: doorsScreen,
+        textBox: doorsTextBox,
+        previewBox: null,
+        shouldShowAtmosphere: function () {
+            return hasVisitedFinalScreen;
+        }
+    });
+    bgVideoController.playBgTransition({
+        screen: doorsScreen,
+        textBox: doorsTextBox,
+        previewBox: null,
+        shouldShowAtmosphere: function () {
+            return hasVisitedFinalScreen;
+        },
+        transitionVideo: BG_VIDEO_DOORS_TRANSITION,
+        finalVideo: BG_VIDEO_DOORS_FINAL
+    });
+    doorsScreen.style.display = 'flex';
+    hasShownDoorsScreen = true;
+    doorsRedirectPending = false;
+}
+
+function canRunDoorsTimer() {
+    return isPrincipalViewActive() &&
+        !isAppAudioMuted() &&
+        !hasShownDoorsScreen &&
+        !isDoorsScreenVisible() &&
+        !(cembeView && cembeView.classList.contains('is-visible'));
+}
+
+function scheduleDoorsGraceRedirect() {
+    if (!doorsRedirectPending || isFinalScreenVisible()) {
+        return;
+    }
+
+    clearDoorsReturnGraceTimeout();
+    doorsReturnGraceTimeoutId = window.setTimeout(() => {
+        doorsReturnGraceTimeoutId = null;
+
+        if (!doorsRedirectPending || !canRunDoorsTimer() || isFinalScreenVisible()) {
+            return;
+        }
+
+        showDoorsScreen();
+    }, DOORS_RETURN_GRACE_MS);
+}
+
+function onDoorsTimerElapsed() {
+    clearDoorsRedirectTimeout();
+    doorsRedirectDeadlineAt = 0;
+
+    if (!canRunDoorsTimer()) {
+        return;
+    }
+
+    if (isFinalScreenVisible()) {
+        doorsRedirectPending = true;
+        return;
+    }
+
+    showDoorsScreen();
+}
+
+function startDoorsTimerIfEligible() {
+    if (!canRunDoorsTimer() || doorsRedirectPending || doorsRedirectDeadlineAt > 0) {
+        return;
+    }
+
+    doorsRedirectDeadlineAt = Date.now() + DOORS_REDIRECT_DELAY_MS;
+    doorsRedirectTimeoutId = window.setTimeout(onDoorsTimerElapsed, DOORS_REDIRECT_DELAY_MS);
+}
+
+function resetDoorsTimer() {
+    resetDoorsRedirectState();
+}
+
+function syncDoorsTimerAfterPrincipalResume() {
+    if (doorsRedirectPending) {
+        scheduleDoorsGraceRedirect();
+        return;
+    }
+
+    startDoorsTimerIfEligible();
+}
+
+document.addEventListener('finalbday:audio-muted-change', function (event) {
+    const detail = event && event.detail ? event.detail : {};
+
+    if (detail.muted) {
+        resetDoorsTimer();
+        return;
+    }
+
+    syncDoorsTimerAfterPrincipalResume();
 });
 
 // Detección propia de "tap/click real" sobre el slide activo, en vez de
@@ -1030,14 +1210,9 @@ btnNo.addEventListener('click', () => {
 
 btnYes.addEventListener('click', () => {
     confirmDialog.style.display = 'none';
+    hasVisitedFinalScreen = true;
 
-    mainSwiperEl.style.display = 'none';
-    mainGridEl.style.display = 'none';
-    document.getElementById('select-container').style.opacity = '0';
-    document.getElementById('select-container').style.pointerEvents = 'none';
-    diceBtn.style.opacity = '0';
-    diceBtn.style.pointerEvents = 'none';
-    hideSwiperCategoryTag();
+    hidePrincipalChrome();
 
     bgVideoController.hideFinalContent();
     bgVideoController.playBgTransition();
@@ -1060,9 +1235,6 @@ btnYes.addEventListener('click', () => {
     }
 
     finalScreen.style.display = 'flex';
-    if (cembeNavButton) {
-        cembeNavButton.classList.add('is-hidden');
-    }
 });
 
 btnBack.addEventListener('click', () => {
@@ -1070,21 +1242,25 @@ btnBack.addEventListener('click', () => {
 
     bgVideoController.restoreOriginalBgVideo();
 
-    mainSwiperEl.style.display = 'block';
-    mainSwiperEl.style.opacity = '1';
-    mainSwiperEl.style.pointerEvents = 'auto';
+    showPrincipalChrome();
 
-    document.getElementById('select-container').style.opacity = '1';
-    document.getElementById('select-container').style.pointerEvents = 'auto';
-    diceBtn.style.opacity = '1';
-    diceBtn.style.pointerEvents = 'auto';
-    if (cembeNavButton) {
-        cembeNavButton.classList.remove('is-hidden');
+    if (doorsRedirectPending) {
+        scheduleDoorsGraceRedirect();
     }
-
-    swiper.update();
-    syncSwiperCategoryTag();
 });
+
+if (doorsBackBtn) {
+    doorsBackBtn.addEventListener('click', () => {
+        doorsScreen.style.display = 'none';
+        bgVideoController.restoreOriginalBgVideo({
+            screen: doorsScreen,
+            textBox: doorsTextBox,
+            previewBox: null
+        });
+        showPrincipalChrome();
+        resetDoorsTimer();
+    });
+}
 
 function isAppAudioMuted() {
     return !!(window.FinalBdayAppAudioController && window.FinalBdayAppAudioController.isMuted());
@@ -1093,17 +1269,9 @@ function isAppAudioMuted() {
 function showCembeView() {
     if (!cembeView) return;
 
-    mainSwiperEl.style.display = 'none';
-    mainGridEl.style.display = 'none';
-    document.getElementById('select-container').style.opacity = '0';
-    document.getElementById('select-container').style.pointerEvents = 'none';
-    diceBtn.style.opacity = '0';
-    diceBtn.style.pointerEvents = 'none';
-    hideSwiperCategoryTag();
+    resetDoorsTimer();
 
-    if (cembeNavButton) {
-        cembeNavButton.classList.add('is-hidden');
-    }
+    hidePrincipalChrome();
 
     cembeView.classList.add('is-visible');
 
@@ -1130,21 +1298,8 @@ function hideCembeView() {
         globalBgMusic.play().catch(() => {});
     }
 
-    mainSwiperEl.style.display = 'block';
-    mainSwiperEl.style.opacity = '1';
-    mainSwiperEl.style.pointerEvents = 'auto';
-
-    document.getElementById('select-container').style.opacity = '1';
-    document.getElementById('select-container').style.pointerEvents = 'auto';
-    diceBtn.style.opacity = '1';
-    diceBtn.style.pointerEvents = 'auto';
-
-    if (cembeNavButton) {
-        cembeNavButton.classList.remove('is-hidden');
-    }
-
-    swiper.update();
-    syncSwiperCategoryTag();
+    showPrincipalChrome();
+    startDoorsTimerIfEligible();
 }
 
 if (cembeBackBtn) {

@@ -17,6 +17,11 @@
     overflow: hidden;
 }
 
+.doors-screen-overlay {
+    justify-content: flex-end;
+    padding-bottom: 28px;
+}
+
 .final-atmosphere {
     position: absolute;
     inset: 0;
@@ -263,6 +268,10 @@
 
 .final-preview-container.is-visible {
     opacity: 1;
+}
+
+.doors-text-box {
+    margin-bottom: 0;
 }
 
 .final-preview-container img,

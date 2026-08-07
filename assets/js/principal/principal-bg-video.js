@@ -13,12 +13,17 @@
         const BAR2_PRELOAD_DELAY_MS = 2000;
         const ATMOSPHERE_DELAY_MS = 5000;
         const LASER_DELAY_MS = 1000;
+        const defaultShouldShowAtmosphere = typeof settings.shouldShowAtmosphere === 'function'
+            ? settings.shouldShowAtmosphere
+            : function () {
+                return true;
+            };
 
         let activeBgVideo = bgVideoA;
         let standbyBgVideo = bgVideoB;
         let bgTransitionToken = 0;
-        let atmosphereTimerId = null;
-        let laserTimerId = null;
+        const atmosphereTimerIds = new Map();
+        const laserTimerIds = new Map();
 
         function resolveAssetUrl(url) {
             if (window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function') {
@@ -40,49 +45,90 @@
             return true;
         }
 
-        function hideFinalContent() {
-            if (atmosphereTimerId !== null) {
-                clearTimeout(atmosphereTimerId);
-                atmosphereTimerId = null;
-            }
+        function resolveContentOptions(contentOptions) {
+            const content = contentOptions || {};
 
-            if (laserTimerId !== null) {
-                clearTimeout(laserTimerId);
-                laserTimerId = null;
-            }
-
-            if (finalScreen) {
-                finalScreen.classList.remove('with-atmosphere');
-                finalScreen.classList.remove('with-lasers');
-            }
-
-            finalTextBox.classList.remove('is-visible');
-            finalPreviewBox.classList.remove('is-visible');
+            return {
+                screen: content.screen || finalScreen,
+                textBox: content.textBox || finalTextBox,
+                previewBox: Object.prototype.hasOwnProperty.call(content, 'previewBox')
+                    ? content.previewBox
+                    : finalPreviewBox,
+                shouldShowAtmosphere: typeof content.shouldShowAtmosphere === 'function'
+                    ? content.shouldShowAtmosphere
+                    : defaultShouldShowAtmosphere
+            };
         }
 
-        function revealFinalContent() {
-            finalTextBox.classList.add('is-visible');
-            finalPreviewBox.classList.add('is-visible');
+        function clearRevealTimers(screenEl) {
+            if (!screenEl) {
+                return;
+            }
 
-            if (!finalScreen) return;
-
-            if (atmosphereTimerId !== null) {
+            const atmosphereTimerId = atmosphereTimerIds.get(screenEl);
+            if (atmosphereTimerId !== undefined) {
                 clearTimeout(atmosphereTimerId);
+                atmosphereTimerIds.delete(screenEl);
             }
 
-            if (laserTimerId !== null) {
+            const laserTimerId = laserTimerIds.get(screenEl);
+            if (laserTimerId !== undefined) {
                 clearTimeout(laserTimerId);
-                laserTimerId = null;
+                laserTimerIds.delete(screenEl);
+            }
+        }
+
+        function hideFinalContent(contentOptions) {
+            const content = resolveContentOptions(contentOptions);
+
+            clearRevealTimers(content.screen);
+
+            if (content.screen) {
+                content.screen.classList.remove('with-atmosphere');
+                content.screen.classList.remove('with-lasers');
             }
 
-            atmosphereTimerId = setTimeout(() => {
-                finalScreen.classList.add('with-atmosphere');
-                laserTimerId = setTimeout(() => {
-                    finalScreen.classList.add('with-lasers');
-                    laserTimerId = null;
+            if (content.textBox) {
+                content.textBox.classList.remove('is-visible');
+            }
+
+            if (content.previewBox) {
+                content.previewBox.classList.remove('is-visible');
+            }
+        }
+
+        function revealFinalContent(contentOptions) {
+            const content = resolveContentOptions(contentOptions);
+
+            if (content.textBox) {
+                content.textBox.classList.add('is-visible');
+            }
+
+            if (content.previewBox) {
+                content.previewBox.classList.add('is-visible');
+            }
+
+            if (!content.screen) return;
+
+            clearRevealTimers(content.screen);
+
+            if (!content.shouldShowAtmosphere()) {
+                return;
+            }
+
+            const atmosphereTimerId = setTimeout(() => {
+                content.screen.classList.add('with-atmosphere');
+                atmosphereTimerIds.delete(content.screen);
+
+                const laserTimerId = setTimeout(() => {
+                    content.screen.classList.add('with-lasers');
+                    laserTimerIds.delete(content.screen);
                 }, LASER_DELAY_MS);
-                atmosphereTimerId = null;
+
+                laserTimerIds.set(content.screen, laserTimerId);
             }, ATMOSPHERE_DELAY_MS);
+
+            atmosphereTimerIds.set(content.screen, atmosphereTimerId);
         }
 
         function swapActiveBgVideo() {
@@ -136,18 +182,18 @@
             parkVideoAtStart(standbyBgVideo);
         }
 
-        function preloadTransitionStartVideo() {
-            preloadStandbyBgVideoAtStart(transitionVideo);
+        function preloadTransitionStartVideo(src) {
+            preloadStandbyBgVideoAtStart(src || transitionVideo);
         }
 
-        function resetBgLayersToOriginalInstant() {
+        function resetBgLayersToOriginalInstant(preloadSrc) {
             const originalUrl = resolveAssetUrl(originalVideo);
             const activeSrc = activeBgVideo.currentSrc || activeBgVideo.getAttribute('src') || '';
 
             if (activeSrc.indexOf(originalUrl) !== -1 && activeBgVideo.classList.contains('is-active')) {
                 // Incluso si ya estamos en el video original, dejamos la capa standby
                 // preparada con bar1 en el primer frame para evitar flashes de otro fondo.
-                preloadTransitionStartVideo();
+                preloadTransitionStartVideo(preloadSrc);
                 return;
             }
 
@@ -169,7 +215,7 @@
 
             bgVideoA.load();
             bgVideoA.play().catch(() => {});
-            preloadTransitionStartVideo();
+            preloadTransitionStartVideo(preloadSrc);
         }
 
         function transitionBgVideoTo(src, params) {
@@ -275,12 +321,17 @@
             }
         }
 
-        function playBgTransition() {
-            resetBgLayersToOriginalInstant();
-            const myToken = ++bgTransitionToken;
-            hideFinalContent();
+        function playBgTransition(transitionOptions) {
+            const options = transitionOptions || {};
+            const transitionSrc = options.transitionVideo || transitionVideo;
+            const finalSrc = options.finalVideo || finalVideo;
+            const content = resolveContentOptions(options);
 
-            transitionBgVideoTo(transitionVideo, {
+            resetBgLayersToOriginalInstant(transitionSrc);
+            const myToken = ++bgTransitionToken;
+            hideFinalContent(content);
+
+            transitionBgVideoTo(transitionSrc, {
                 loop: false,
                 resetOnActivate: true,
                 startTimeSeconds: BAR1_START_TIME_SECONDS,
@@ -288,25 +339,25 @@
                 onActive: (bar1Video) => {
                     setTimeout(() => {
                         if (myToken !== bgTransitionToken) return;
-                        preloadStandbyBgVideo(finalVideo);
+                        preloadStandbyBgVideo(finalSrc);
                     }, BAR2_PRELOAD_DELAY_MS);
 
                     bar1Video.addEventListener('ended', function onBar1Ended() {
                         bar1Video.removeEventListener('ended', onBar1Ended);
                         if (myToken !== bgTransitionToken) return;
 
-                        transitionBgVideoTo(finalVideo, {
+                        transitionBgVideoTo(finalSrc, {
                             loop: true,
                             token: myToken,
                             onActive: (bar2Video) => {
                                 if (!bar2Video.paused && myToken === bgTransitionToken) {
-                                    revealFinalContent();
+                                    revealFinalContent(content);
                                     return;
                                 }
 
                                 bar2Video.addEventListener('playing', function onBar2Playing() {
                                     bar2Video.removeEventListener('playing', onBar2Playing);
-                                    if (myToken === bgTransitionToken) revealFinalContent();
+                                    if (myToken === bgTransitionToken) revealFinalContent(content);
                                 }, { once: true });
                             }
                         });
@@ -315,9 +366,9 @@
             });
         }
 
-        function restoreOriginalBgVideo() {
+        function restoreOriginalBgVideo(contentOptions) {
             const myToken = ++bgTransitionToken;
-            hideFinalContent();
+            hideFinalContent(contentOptions);
             transitionBgVideoTo(originalVideo, {
                 loop: true,
                 token: myToken,

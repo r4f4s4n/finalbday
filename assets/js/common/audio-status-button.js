@@ -72,6 +72,12 @@
                 onResume();
             }
 
+            document.dispatchEvent(new CustomEvent('finalbday:audio-muted-change', {
+                detail: {
+                    muted: shouldMute
+                }
+            }));
+
             syncButtonState();
         }
 

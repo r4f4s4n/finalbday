@@ -29,6 +29,7 @@
         'components/principal/app-media-shell.html',
         'components/principal/app-confirm-dialog.html',
         'components/principal/app-final-screen.html',
+        'components/principal/app-doors-screen.html',
         'components/principal/app-cembe-view.html',
         'assets/backgrounds/video_movil.mp4',
         'assets/backgrounds/video_escritorio.mp4',
@@ -38,7 +39,9 @@
         'assets/audios/pumpup.mp3',
         'assets/backgrounds/disco_movil.mp4',
         'assets/backgrounds/bar1-movil.mp4',
-        'assets/backgrounds/bar2-movil.mp4'
+        'assets/backgrounds/bar2-movil.mp4',
+        'assets/backgrounds/doors1-movil.mp4',
+        'assets/backgrounds/doors2-movil.mp4'
     ];
 
     function isLikelyMobileDevice() {
