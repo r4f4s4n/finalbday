@@ -2,6 +2,7 @@
     let initPromise = null;
     let cembeViewApi = null;
     let resetIdleStateApi = null;
+    let doorsAudioResumeApi = null;
 
     function isLegacyPagesContext() {
         return /\/pages\//.test(window.location.pathname);
@@ -527,6 +528,15 @@ function createZoomOverlay() {
 
     return {
         overlay: overlay,
+        closeProgrammatically: () => {
+            if (!overlay.classList.contains('is-visible')) {
+                return;
+            }
+
+            // Equivale al cierre manual con el botón de lupa menos.
+            suppressSlideActivation();
+            close();
+        },
         openFrom: (sourceMedia) => {
             if (!sourceMedia) return;
             zoomContent.innerHTML = '';
@@ -953,7 +963,6 @@ const btnBack = document.getElementById('btn-back');
 const doorsScreen = document.getElementById('doors-screen');
 const doorsTextBox = document.getElementById('doors-text-box');
 const doorsBackBtn = document.getElementById('doors-back-btn');
-const doorsVoiceover = document.getElementById('doors-voiceover');
 const cembeNavButton = document.getElementById('cembe-nav-button');
 const cembeView = document.getElementById('cembe-view');
 const cembeBackBtn = document.getElementById('cembe-back-btn');
@@ -968,15 +977,19 @@ const BG_VIDEO_TRANSITION = projectPath('assets/backgrounds/bar1-movil.mp4');
 const BG_VIDEO_FINAL = projectPath('assets/backgrounds/bar2-movil.mp4');
 const BG_VIDEO_DOORS_TRANSITION = projectPath('assets/backgrounds/doors1-movil.mp4');
 const BG_VIDEO_DOORS_FINAL = projectPath('assets/backgrounds/doors2-movil.mp4');
+const BG_IMAGE_DOORS_STILL = projectPath('assets/backgrounds/doors3-movil.png');
 const GLOBAL_BG_FULL_VOLUME = 1;
 const DOORS_BG_DUCKED_VOLUME = 0.10;
-const DOORS_REDIRECT_DELAY_MS = 30 * 1000;
+const DOORS_FINAL_VIDEO_START_DELAY_MS = 500;
+const DOORS_FINAL_VIDEO_VOLUME = 1;
+const DOORS_REDIRECT_DELAY_MS = 360 * 1000;
 const DOORS_RETURN_GRACE_MS = 6000;
 
 let hasVisitedFinalScreen = false;
 let hasShownDoorsScreen = false;
 let hasDoorsTextRevealStarted = false;
-let hasDoorsVoiceoverEnded = false;
+let hasDoorsFinalVideoEnded = false;
+let activeDoorsFinalVideoEl = null;
 let doorsRedirectTimeoutId = null;
 let doorsReturnGraceTimeoutId = null;
 let doorsRedirectDeadlineAt = 0;
@@ -1069,33 +1082,77 @@ function duckGlobalBgMusicVolume() {
     setGlobalBgMusicVolume(DOORS_BG_DUCKED_VOLUME);
 }
 
-function resetDoorsVoiceoverPlayback() {
-    if (!doorsVoiceover) {
-        hasDoorsTextRevealStarted = false;
-        hasDoorsVoiceoverEnded = false;
-        return;
+function resetDoorsFinalVideoState() {
+    if (activeDoorsFinalVideoEl) {
+        activeDoorsFinalVideoEl.muted = true;
+        activeDoorsFinalVideoEl.volume = 1;
     }
 
-    doorsVoiceover.pause();
-
-    try {
-        doorsVoiceover.currentTime = 0;
-    } catch (_) {
-        // Algunos navegadores pueden bloquear el seek si aún no hay metadata.
-    }
-
+    activeDoorsFinalVideoEl = null;
     hasDoorsTextRevealStarted = false;
-    hasDoorsVoiceoverEnded = false;
+    hasDoorsFinalVideoEnded = false;
 }
 
 function stopDoorsAudioOverlay() {
-    resetDoorsVoiceoverPlayback();
+    resetDoorsFinalVideoState();
     restoreGlobalBgMusicVolume();
 }
 
-function handleDoorsVoiceoverEnded() {
-    hasDoorsVoiceoverEnded = true;
+function handleDoorsFinalVideoActive(videoEl) {
+    activeDoorsFinalVideoEl = videoEl || null;
+    hasDoorsFinalVideoEnded = false;
+
+    if (!activeDoorsFinalVideoEl) {
+        return;
+    }
+
+    activeDoorsFinalVideoEl.volume = DOORS_FINAL_VIDEO_VOLUME;
+    activeDoorsFinalVideoEl.muted = isAppAudioMuted();
+
+    try {
+        activeDoorsFinalVideoEl.currentTime = 0;
+    } catch (_) {
+        // Si no hay metadata todavía, arrancará en cuanto el navegador lo permita.
+    }
+
+    activeDoorsFinalVideoEl.pause();
+
+    if (!isAppAudioMuted()) {
+        window.setTimeout(() => {
+            if (!activeDoorsFinalVideoEl || activeDoorsFinalVideoEl !== videoEl || hasDoorsFinalVideoEnded) {
+                return;
+            }
+
+            try {
+                activeDoorsFinalVideoEl.currentTime = 0;
+            } catch (_) {
+                // Ignore seek guard.
+            }
+
+            activeDoorsFinalVideoEl.play().catch(() => {});
+        }, DOORS_FINAL_VIDEO_START_DELAY_MS);
+    }
+}
+
+function handleDoorsFinalVideoEnded(videoEl) {
+    hasDoorsFinalVideoEnded = true;
+    if (videoEl) {
+        videoEl.muted = true;
+    }
     restoreGlobalBgMusicVolume();
+}
+
+function syncDoorsFinalVideoMuteState(shouldMute) {
+    if (!activeDoorsFinalVideoEl || hasDoorsFinalVideoEnded) {
+        return;
+    }
+
+    activeDoorsFinalVideoEl.muted = shouldMute;
+    activeDoorsFinalVideoEl.volume = DOORS_FINAL_VIDEO_VOLUME;
+
+    if (!shouldMute) {
+        activeDoorsFinalVideoEl.play().catch(() => {});
+    }
 }
 
 function resumeDoorsAudioIfNeeded() {
@@ -1107,7 +1164,7 @@ function resumeDoorsAudioIfNeeded() {
         return false;
     }
 
-    if (hasDoorsVoiceoverEnded || !doorsVoiceover) {
+    if (hasDoorsFinalVideoEnded || !activeDoorsFinalVideoEl) {
         restoreGlobalBgMusicVolume();
         globalBgMusic.play().catch(() => {});
         return true;
@@ -1115,13 +1172,11 @@ function resumeDoorsAudioIfNeeded() {
 
     duckGlobalBgMusicVolume();
     globalBgMusic.play().catch(() => {});
-    doorsVoiceover.play().catch(() => {});
+    syncDoorsFinalVideoMuteState(false);
     return true;
 }
 
-if (doorsVoiceover) {
-    doorsVoiceover.addEventListener('ended', handleDoorsVoiceoverEnded);
-}
+doorsAudioResumeApi = resumeDoorsAudioIfNeeded;
 
 function handleDoorsTextReveal() {
     hasDoorsTextRevealStarted = true;
@@ -1132,6 +1187,9 @@ function showDoorsScreen() {
     if (!doorsScreen || isDoorsScreenVisible() || hasShownDoorsScreen) {
         return;
     }
+
+    // Si hay zoom abierto, lo cerramos antes de redirigir a doors-screen.
+    zoomOverlayController.closeProgrammatically();
 
     hidePrincipalChrome();
     bgVideoController.hideFinalContent({
@@ -1147,16 +1205,21 @@ function showDoorsScreen() {
         textBox: doorsTextBox,
         previewBox: null,
         onRevealContent: handleDoorsTextReveal,
+        onFinalActive: handleDoorsFinalVideoActive,
+        onFinalEnded: handleDoorsFinalVideoEnded,
         shouldShowAtmosphere: function () {
             return hasVisitedFinalScreen;
         },
         transitionVideo: BG_VIDEO_DOORS_TRANSITION,
-        finalVideo: BG_VIDEO_DOORS_FINAL
+        finalVideo: BG_VIDEO_DOORS_FINAL,
+        finalLoop: false,
+        finalAutoPlayOnActivate: false,
+        finalStillImage: BG_IMAGE_DOORS_STILL
     });
     doorsScreen.style.display = 'flex';
     hasShownDoorsScreen = true;
     doorsRedirectPending = false;
-    resetDoorsVoiceoverPlayback();
+    resetDoorsFinalVideoState();
 }
 
 function canRunDoorsTimer() {
@@ -1226,6 +1289,7 @@ document.addEventListener('finalbday:audio-muted-change', function (event) {
     const detail = event && event.detail ? event.detail : {};
 
     if (detail.muted) {
+        syncDoorsFinalVideoMuteState(true);
         resetDoorsTimer();
         return;
     }
@@ -1404,7 +1468,8 @@ cembeViewApi = {
             if (resetIdleStateApi) resetIdleStateApi();
         },
         handleDoorsAudioResume: function () {
-            return resumeDoorsAudioIfNeeded();
+            if (!doorsAudioResumeApi) return false;
+            return doorsAudioResumeApi();
         },
         showCembeView: function () {
             if (cembeViewApi) cembeViewApi.showCembeView();

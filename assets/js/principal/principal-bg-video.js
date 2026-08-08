@@ -24,6 +24,24 @@
         let bgTransitionToken = 0;
         const atmosphereTimerIds = new Map();
         const laserTimerIds = new Map();
+        const bgRoot = bgVideoA && bgVideoA.parentElement ? bgVideoA.parentElement : null;
+        const stillLayer = document.createElement('div');
+
+        stillLayer.className = 'bg-still-layer';
+        stillLayer.style.position = 'absolute';
+        stillLayer.style.inset = '0';
+        stillLayer.style.backgroundPosition = 'center center';
+        stillLayer.style.backgroundRepeat = 'no-repeat';
+        // El fondo estático final de doors se ajusta por altura para evitar zoom/crop.
+        stillLayer.style.backgroundSize = 'auto 100%';
+        stillLayer.style.opacity = '0';
+        stillLayer.style.transition = 'opacity 0.45s ease';
+        stillLayer.style.pointerEvents = 'none';
+        stillLayer.style.zIndex = '1';
+
+        if (bgRoot) {
+            bgRoot.appendChild(stillLayer);
+        }
 
         function resolveAssetUrl(url) {
             if (window.FinalBdayAssetCache && typeof window.FinalBdayAssetCache.resolve === 'function') {
@@ -43,6 +61,22 @@
 
             mediaEl.src = resolvedSrc;
             return true;
+        }
+
+        function hideStillLayer() {
+            stillLayer.style.opacity = '0';
+            stillLayer.style.backgroundImage = '';
+        }
+
+        function showStillLayer(src) {
+            if (!src) {
+                hideStillLayer();
+                return;
+            }
+
+            const resolvedSrc = resolveAssetUrl(src);
+            stillLayer.style.backgroundImage = `url("${resolvedSrc}")`;
+            stillLayer.style.opacity = '1';
         }
 
         function resolveContentOptions(contentOptions) {
@@ -194,6 +228,8 @@
         }
 
         function resetBgLayersToOriginalInstant(preloadSrc) {
+            hideStillLayer();
+
             const originalUrl = resolveAssetUrl(originalVideo);
             const activeSrc = activeBgVideo.currentSrc || activeBgVideo.getAttribute('src') || '';
 
@@ -230,6 +266,7 @@
             const loop = cfg.loop !== undefined ? cfg.loop : true;
             const token = cfg.token;
             const onActive = cfg.onActive;
+            const autoPlayOnActivate = cfg.autoPlayOnActivate !== undefined ? !!cfg.autoPlayOnActivate : true;
             const incoming = standbyBgVideo;
             const resetOnActivate = !!cfg.resetOnActivate;
             const startTimeSeconds = Number.isFinite(cfg.startTimeSeconds)
@@ -242,7 +279,9 @@
                 incoming.loop = loop;
                 swapActiveBgVideo();
                 if (onActive) onActive(incoming);
-                incoming.play().catch(() => {});
+                if (autoPlayOnActivate) {
+                    incoming.play().catch(() => {});
+                }
             }
 
             const resolvedSrc = resolveAssetUrl(src);
@@ -332,6 +371,10 @@
             const options = transitionOptions || {};
             const transitionSrc = options.transitionVideo || transitionVideo;
             const finalSrc = options.finalVideo || finalVideo;
+            const finalLoop = options.finalLoop !== undefined ? !!options.finalLoop : true;
+            const onFinalActive = typeof options.onFinalActive === 'function' ? options.onFinalActive : null;
+            const onFinalEnded = typeof options.onFinalEnded === 'function' ? options.onFinalEnded : null;
+            const finalStillImage = options.finalStillImage || '';
             const content = resolveContentOptions(options);
 
             resetBgLayersToOriginalInstant(transitionSrc);
@@ -354,9 +397,32 @@
                         if (myToken !== bgTransitionToken) return;
 
                         transitionBgVideoTo(finalSrc, {
-                            loop: true,
+                            loop: finalLoop,
                             token: myToken,
+                            autoPlayOnActivate: options.finalAutoPlayOnActivate,
                             onActive: (bar2Video) => {
+                                if (onFinalActive) {
+                                    onFinalActive(bar2Video);
+                                }
+
+                                if (!finalLoop) {
+                                    bar2Video.addEventListener('ended', function onFinalEndedEvent() {
+                                        bar2Video.removeEventListener('ended', onFinalEndedEvent);
+                                        if (myToken !== bgTransitionToken) return;
+
+                                        if (finalStillImage) {
+                                            showStillLayer(finalStillImage);
+                                        }
+
+                                        bar2Video.pause();
+                                        bar2Video.classList.remove('is-active');
+
+                                        if (onFinalEnded) {
+                                            onFinalEnded(bar2Video);
+                                        }
+                                    }, { once: true });
+                                }
+
                                 if (!bar2Video.paused && myToken === bgTransitionToken) {
                                     revealFinalContent(content);
                                     return;
@@ -375,6 +441,7 @@
 
         function restoreOriginalBgVideo(contentOptions) {
             const myToken = ++bgTransitionToken;
+            hideStillLayer();
             hideFinalContent(contentOptions);
             transitionBgVideoTo(originalVideo, {
                 loop: true,

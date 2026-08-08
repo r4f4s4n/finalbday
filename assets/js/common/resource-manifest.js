@@ -36,13 +36,13 @@
         'assets/backgrounds/zoom_movil.mp4',
         'assets/backgrounds/zoom_escritorio.mp4',
         'assets/audios/interior_student_cafe.mp3',
-        'assets/audios/doors.m4a',
         'assets/audios/pumpup.mp3',
         'assets/backgrounds/disco_movil.mp4',
         'assets/backgrounds/bar1-movil.mp4',
         'assets/backgrounds/bar2-movil.mp4',
         'assets/backgrounds/doors1-movil.mp4',
-        'assets/backgrounds/doors2-movil.mp4'
+        'assets/backgrounds/doors2-movil.mp4',
+        'assets/backgrounds/doors3-movil.png'
     ];
 
     function isLikelyMobileDevice() {
