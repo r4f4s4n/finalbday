@@ -984,6 +984,7 @@ const DOORS_FINAL_VIDEO_START_DELAY_MS = 500;
 const DOORS_FINAL_VIDEO_VOLUME = 1;
 const DOORS_REDIRECT_DELAY_MS = 360 * 1000;
 const DOORS_RETURN_GRACE_MS = 6000;
+const DOORS_CEMBE_RESUME_EXTRA_MS = 30 * 1000;
 
 let hasVisitedFinalScreen = false;
 let hasShownDoorsScreen = false;
@@ -994,6 +995,7 @@ let doorsRedirectTimeoutId = null;
 let doorsReturnGraceTimeoutId = null;
 let doorsRedirectDeadlineAt = 0;
 let doorsRedirectPending = false;
+let doorsPausedRemainingMs = null;
 
 const bgVideoController = window.FinalBdayPrincipalBgVideo.createController({
     finalScreen: finalScreen,
@@ -1033,6 +1035,7 @@ function resetDoorsRedirectState() {
     clearDoorsReturnGraceTimeout();
     doorsRedirectDeadlineAt = 0;
     doorsRedirectPending = false;
+    doorsPausedRemainingMs = null;
 }
 
 function hidePrincipalChrome() {
@@ -1272,6 +1275,50 @@ function startDoorsTimerIfEligible() {
     doorsRedirectTimeoutId = window.setTimeout(onDoorsTimerElapsed, DOORS_REDIRECT_DELAY_MS);
 }
 
+function pauseDoorsTimerForCembe() {
+    if (doorsRedirectPending || doorsRedirectDeadlineAt <= 0) {
+        return;
+    }
+
+    doorsPausedRemainingMs = Math.max(0, doorsRedirectDeadlineAt - Date.now());
+    clearDoorsRedirectTimeout();
+    doorsRedirectDeadlineAt = 0;
+}
+
+function resumeDoorsTimerAfterCembe() {
+    if (!canRunDoorsTimer()) {
+        return;
+    }
+
+    // Reprogramamos siempre el timer al volver de cembe para garantizar
+    // el extra de cortesía aunque viniéramos de un estado pending/grace.
+    clearDoorsRedirectTimeout();
+    clearDoorsReturnGraceTimeout();
+
+    let baseDelayMs = doorsPausedRemainingMs;
+    if (baseDelayMs === null) {
+        if (doorsRedirectPending) {
+            baseDelayMs = DOORS_RETURN_GRACE_MS;
+        } else if (doorsRedirectDeadlineAt > 0) {
+            baseDelayMs = Math.max(0, doorsRedirectDeadlineAt - Date.now());
+        } else {
+            baseDelayMs = DOORS_REDIRECT_DELAY_MS;
+        }
+    }
+
+    const resumeDelayMs = baseDelayMs + DOORS_CEMBE_RESUME_EXTRA_MS;
+    doorsPausedRemainingMs = null;
+    doorsRedirectPending = false;
+
+    if (resumeDelayMs <= 0) {
+        onDoorsTimerElapsed();
+        return;
+    }
+
+    doorsRedirectDeadlineAt = Date.now() + resumeDelayMs;
+    doorsRedirectTimeoutId = window.setTimeout(onDoorsTimerElapsed, resumeDelayMs);
+}
+
 function resetDoorsTimer() {
     resetDoorsRedirectState();
 }
@@ -1416,7 +1463,7 @@ function isAppAudioMuted() {
 function showCembeView() {
     if (!cembeView) return;
 
-    resetDoorsTimer();
+    pauseDoorsTimerForCembe();
 
     hidePrincipalChrome();
 
@@ -1446,7 +1493,7 @@ function hideCembeView() {
     }
 
     showPrincipalChrome();
-    startDoorsTimerIfEligible();
+    resumeDoorsTimerAfterCembe();
 }
 
 if (cembeBackBtn) {
