@@ -133,7 +133,8 @@
     132: { year: "2013", category: "Hospital", theme: "Esguince de codo", file: "custom132.png" },
     133: { year: "2013", category: "Hospital", theme: "Esguince de muñeca", file: "custom133.png" },
     134: { year: "2013", category: "Hospital", theme: "Josef Mengele", file: "custom134.png" },
-    135: { year: "2014", category: "Paradas de Metro", theme: "Santiago Bernabéu", file: "custom135.png" }
+    135: { year: "2014", category: "Paradas de Metro", theme: "Santiago Bernabéu", file: "custom135.png" },
+    136: { year: "2024", category: "Navidad", theme: "Zemba Jean", file: "custom136.png" }
     };
 
     function getData() {
