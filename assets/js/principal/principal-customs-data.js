@@ -100,7 +100,7 @@
     98: { year: "2013", category: "Hospital", theme: "Dr. House", file: "custom98.png" },
     99: { year: "2014", category: "Paradas de Metro", theme: "Barajas", file: "custom99.png" },
     100: { year: "2014", category: "Paradas de Metro", theme: "Oporto", file: "custom100.png" },
-    101: { year: "2015", category: "La Música", theme: "Lucrecia", file: "custom101.png" },
+    101: { year: "2015", category: "La Música", theme: "Nicki Minaj", file: "custom101.png" },
     102: { year: "2015", category: "La Música", theme: "Tony Moreno (Eskorzo)", file: "custom102.png" },
     103: { year: "2017", category: "Películas", theme: "Chewbacca", file: "custom103.png" },
     104: { year: "2017", category: "Películas", theme: "Audrey Hepburn", file: "custom104.png" },
